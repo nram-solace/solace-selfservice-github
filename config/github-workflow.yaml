@@ -1,0 +1,43 @@
+---
+# This file goes under .github/workflows/ directory as manual.yaml
+# use GitHub Actions UI. Don't create this file manually.
+name: Post on Change
+
+on:
+  push:
+    paths:
+      - 'input/**'
+
+jobs:
+  create_queues:
+    runs-on: ubuntu-latest
+    # for NT
+    #runs-on: [ self-hosted, enterprise, docker, Linux ]
+    #container:
+    #  image: ghcr.io/northerntrust-internal/ghe/python:3.9
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+  
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install dependencies
+        run: pip install datetime logging requests pathlib pyyaml 
+
+      - name: Run Python script - hardcoded input file
+        run: |
+          # required for NT
+          #export http_proxy=$HTTP_PROXY
+          #export https_proxy=$HTTPS_PROXY
+          #echo "http_proxy set to $http_proxy"
+          python scripts/create-queues.py --input input/queues.yaml -v
+        env:
+          SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
+          # required for NT
+          #HTTP_PROXY: "http://199.16.205.1:9443/"
+          #HTTPS_PROXY: "https://199.16.205.1:9443/"
