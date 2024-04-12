@@ -1,5 +1,5 @@
 ########################################################################
-# create-queues2
+# create-queues
 #
 # This program creates new or update existing queues on a Solace PubSub+ broker using SEMPv2
 # While updating, Queue will be temporarily disabled.
@@ -28,19 +28,23 @@ from common import SempHandler
 from common import QueueConfig2
 from common import YamlHandler
 
-
 pp = pprint.PrettyPrinter(indent=4)
 
-me = "create-queues2"
-ver = '1.0.0'
+me = "create-queues"
+ver = 'v1.1'
 
 # Define the minimum required Python version
 MIN_PYTHON_VERSION = (3, 6)
 
-
 def main(argv):
     """ program entry drop point """
 
+    # print python version
+    print ("Python version: ", sys.version)
+    #print ("Python path: ", sys.path)
+    # print program and args
+    print ('Program: ', sys.argv[0], str(sys.argv[1:]))
+    
     # parse command line arguments
     p = argparse.ArgumentParser()
     p.add_argument('--input', dest="input_file", required=True, 
@@ -52,8 +56,8 @@ def main(argv):
     r = p.parse_args()
 
     print ('\n{}-{} Starting\n'.format(me,ver))
-
-    print ("--- http proxy: ", os.environ.get('http_proxy'))
+    
+    print ("http proxy: ", os.environ.get('http_proxy'))
     
     print ("Reading input file: {}".format(r.input_file))
     yaml_h = YamlHandler.YamlHandler()
