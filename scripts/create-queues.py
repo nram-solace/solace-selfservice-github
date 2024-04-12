@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath("."))
 from common import LogHandler
 from common import SempHandler
 #from common import JsonHandler
-from common import QueueConfig2
+from common import QueueConfig
 from common import YamlHandler
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -51,11 +51,13 @@ def main(argv):
                    help='user input Yaml file') 
     p.add_argument('--patch', dest="patch_it", action='store_true', required=False, default=False, 
                    help='user input csv file') 
+    p.add_argument('--subscriptions', '-s', dest="add_subscriptions", action='store_true', required=False, default=False,
+                   help='Add subscriptions to queues')
     p.add_argument( '--verbose', '-v', action="count",  required=False, default=0,
                 help='Verbose output. use -vvv for tracing')
     r = p.parse_args()
 
-    print ('\n{}-{} Starting\n'.format(me,ver))
+    print ('{}-{} Starting\n'.format(me,ver))
     
     print ("http proxy: ", os.environ.get('http_proxy'))
     
@@ -106,13 +108,19 @@ def main(argv):
     semp_h = SempHandler.SempHandler(cfg, r.verbose)
 
     # create queue handlers
-    queue_h = QueueConfig2.Queues(semp_h, cfg, q_list, r.verbose)
+    queue_h = QueueConfig.Queues(semp_h, cfg, q_list, r.verbose)
     #dmqueue_h = QueueConfig.Queues(semp_h, Cfg, dmqs, Verbose)
 
     # create / update queues
     # Create DMQs followed by regular queues
     #dmqueue_h.create_or_update_dmqueue ( r.patch_it)
-    queue_h.create_or_update_queue   ( r.patch_it)
+    queue_h.create_queues (input_data['queues'], r.add_subscriptions)
+    
+    #if r.subscriptions:
+    #    # Add subscriptions to queues
+    #    log.info ('Adding subscriptions to queues')
+    #    queue_h.add_topic_subscriptions1(input_data['queue_subscriptions'])
+    
     
 # Program entry point
 if __name__ == "__main__":
