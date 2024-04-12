@@ -1,0 +1,64 @@
+name: Post on Change
+
+on:
+  push:
+    paths:
+      - 'input/**'
+
+jobs:
+  create_queues:
+    runs-on: ubuntu-latest
+    # for NT
+    #runs-on: [ self-hosted, enterprise, docker, Linux ]
+    #container:
+    #  image: ghcr.io/northerntrust-internal/ghe/python:3.9
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # - name: Get uploaded or updated file names
+      #   id: get_files
+      #   run: |
+      #     # Get the list of changed files
+      #     # TODO - this doesn't work in the actions work flow
+      #     # but works locally. Need to figure out why
+      #     #files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+      #     # hard code for testing
+      #     files="input/queues.yaml"
+      #     # Set the output variable for later use
+      #     echo "::set-output name=files::${files}"
+  
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install dependencies
+        run: pip install datetime logging requests pathlib pyyaml 
+
+      # - name: Run create-queues2 for each file
+      #   run: |
+      #     # Iterate over the list of changed files
+      #     IFS=$'\n' read -rd '' -a files_array <<<"${{ steps.get_files.outputs.files }}"
+      #     for file in "${files_array[@]}"; do
+      #       # Run your desired steps for each file
+      #       echo "Processing file: $file"
+      #       python scripts/create-queues2.py --input "$file"
+      #     done
+      #   env:
+      #     SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
+
+      - name: Run Python script - hardcoded input file
+        run: |
+          # required for NT
+          #export http_proxy=$HTTP_PROXY
+          #export https_proxy=$HTTPS_PROXY
+          #echo "http_proxy set to $http_proxy"
+          python scripts/create-queues.py --input input/queues.yaml -v
+        env:
+          SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
+          # required for NT
+          #HTTP_PROXY: "http://199.16.205.1:9443/"
+          #HTTPS_PROXY: "https://199.16.205.1:9443/"
