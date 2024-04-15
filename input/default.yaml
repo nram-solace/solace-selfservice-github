@@ -36,6 +36,7 @@ queues:
         - test/topic/*
    - queueName: Git/Test3
         - test/>
+   - queueName: Git/Test4
 
 client-usernames:
    - clientUsername: "git-test1"
