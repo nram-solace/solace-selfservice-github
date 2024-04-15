@@ -51,8 +51,8 @@ def main(argv):
                    help='user input Yaml file') 
     p.add_argument('--patch', dest="patch_it", action='store_true', required=False, default=False, 
                    help='user input csv file') 
-    p.add_argument('--subscriptions', '-s', dest="add_subscriptions", action='store_true', required=False, default=False,
-                   help='Add subscriptions to queues')
+    #p.add_argument('--subscriptions', '-s', dest="add_subscriptions", action='store_true', required=False, default=False,
+    #               help='Add subscriptions to queues')
     p.add_argument( '--verbose', '-v', action="count",  required=False, default=0,
                 help='Verbose output. use -vvv for tracing')
     r = p.parse_args()
@@ -77,6 +77,11 @@ def main(argv):
     cfg['script_name'] = me
     cfg['verbose'] = r.verbose
     cfg['system'] = system_config_all.copy() # store system cfg in the global Cfg dict
+    run_params = system_config_all['run_params']
+    verbose = run_params['verbose']
+    action = run_params['action']
+    if r.verbose:
+        verbose = r.verbose
     # copy input data to Cfg
     cfg['router'] = input_data['router'].copy() 
     cfg['templates'] = input_data['templates'].copy()
@@ -108,7 +113,7 @@ def main(argv):
     semp_h = SempHandler.SempHandler(cfg, r.verbose)
 
     # create queue handlers
-    queue_h = QueueConfig.Queues(semp_h, cfg, q_list, r.verbose)
+    queue_h = QueueConfig.Queues(semp_h, cfg, q_list, verbose)
     #dmqueue_h = QueueConfig.Queues(semp_h, Cfg, dmqs, Verbose)
 
     # create / update queues

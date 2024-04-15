@@ -19,7 +19,7 @@ run_params:
    action: 
         # valid values: create, update, none
         # valid entries: queues, subscriptions, client-username, client-profile, acl-profile
-        queues: "create"
+        queues: "none"
         subscriptions: "create"
         client-usernames: "create"
         client-profiles: "create"
@@ -34,6 +34,7 @@ queues:
      subscriptions:
         - test/topic/1
         - test/topic/*
+   - queue: Test/Git/nram/001
 
 
 # Template values for creating Queues
