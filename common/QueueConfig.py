@@ -41,8 +41,33 @@ class Queues():
     
     
     def create_queue_subscriptions(self, input_data):
-        self.create_queues(input_data, add_subscriptions = True)
-       
+        semp_h = self.semp_h
+        cfg = self.cfg
+        sys_cfg = cfg['system']
+        msg_vpn_name = cfg['router']['vpn']
+        
+        log.info ('Creating Queue subscriptions in VPN: {} on router: {}'.format(msg_vpn_name, cfg['router']['sempUrl']))
+        semp_config_url = '{}/{}/msgVpns'.format(cfg['router']['sempUrl'], sys_cfg['semp']['configUrl'])
+        semp_queue_config_url = f"{semp_config_url}/{msg_vpn_name}/queues"
+        
+        num_queues = len(input_data)
+        log.notice ('Processing {} Queues on {}'.format(num_queues, msg_vpn_name))   
+        n = 0
+        for q_data in input_data:
+            n += 1
+            queue = q_data['queue']
+            semp_data=cfg['templates']['queue'].copy()
+            # add required missing params
+            semp_data['queueName'] = queue
+            semp_data['msgVpnName'] = msg_vpn_name
+            log.info ('Processing queue: {}'.format(queue))
+
+            ###################################################
+            # post to router - create queue
+            #
+            log.notice (f"Creating queue subscriptions {n}/{num_queues}: {queue}")
+            if 'subscriptions' in q_data:
+                self.add_topic_subscriptions(queue, q_data['subscriptions'])       
         
     #--------------------------------------------------------------------
     # create_queues
