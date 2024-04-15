@@ -18,14 +18,13 @@ log = None
 
 class Queues():
 
-    def __init__(self, semp_h, cfg, input_data, verbose = 0):
+    def __init__(self, semp_h, cfg, verbose = 0):
         global Verbose
         global log
         Verbose = verbose
         log = cfg['log_handler'].get()
         self.semp_h = semp_h
         self.cfg = cfg
-        self.input_data = input_data
     #--------------------------------------------------------------------
     # get_topic_list
     # Get list of topics from SEMP response
@@ -55,7 +54,7 @@ class Queues():
         n = 0
         for q_data in input_data:
             n += 1
-            queue = q_data['queue']
+            queue = q_data['queueName']
             semp_data=cfg['templates']['queue'].copy()
             # add required missing params
             semp_data['queueName'] = queue
@@ -98,7 +97,7 @@ class Queues():
         n = 0
         for q_data in input_data:
             n += 1
-            queue = q_data['queue']
+            queue = q_data['queueName']
             semp_data=cfg['templates']['queue'].copy()
             # add required missing params
             semp_data['queueName'] = queue
@@ -161,7 +160,6 @@ class Queues():
         semp_h = self.semp_h
         cfg = self.cfg
         sys_cfg = cfg['system']
-        #input_data = self.input_data
         
         log.notice  ('Creating Queues')
         

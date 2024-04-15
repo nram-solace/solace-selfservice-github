@@ -19,7 +19,7 @@ run_params:
    action: 
         # valid values: create, update, none
         # valid entries: queues, subscriptions, client-username, client-profile, acl-profile
-        queues: "none"
+        queues: "create"
         subscriptions: "create"
         client-usernames: "create"
         client-profiles: "create"
@@ -29,12 +29,34 @@ run_params:
 # User inputs
 # list of queues and topic subscriptions to create
 queues:
-   - queue: Test/Git/Sample/NoSubs
-   - queue: Test/Git/Sample/WithSubs
+   - queueName: GitTest1NoSubs
+   - queueName: GitTest2WithSubs
      subscriptions:
         - test/topic/1
         - test/topic/*
-   - queue: Test/Git/nram/001
+   - queueName: Git/Test3
+        - test/>
+
+client-usernames:
+   - clientUsername: "git-test1"
+     aclProfileName: "git-test1-acl"
+     clientProfileName: "git-test1-profile"
+   - clientUsername: "git-test2"
+     aclProfileName: "git-test2-acl"
+     clientProfileName: "git-test2-profile"
+   - clientUsername: "git-test3"
+   - clientUsername: "git-test4"
+
+client-profiles:
+   - clientProfileName: "git-test1-profile"
+   - clientProfileName: "git-test2-profile"
+   - clientProfileName: "git-test3-profile"
+
+acl-profiles:
+   - aclProfileName: "git-test1-acl"
+   - aclProfileName: "git-test2-acl"
+   - aclProfileName: "git-test3-acl"
+   - aclProfileName: "git-test4-acl"
 
 
 # Template values for creating Queues
@@ -70,6 +92,26 @@ templates:
       redeliveryEnabled: false
       respectTtlEnabled: false
       subscriptionTopic: ""
+   client-user: 
+      clientProfileName: "default"
+      aclProfileName: "default"
+   client-profile:
+      allowBridgeConnectionsEnabled: false
+      allowGuaranteedEndpointCreateEnabled: false
+      allowGuaranteedMsgReceiveEnabled: false
+      allowGuaranteedMsgSendEnabled: false
+      allowSharedSubscriptionsEnabled: false
+      allowTransactedSessionsEnabled: false
+      maxConnectionCountPerClientUsername: 100
+      maxEgressFlowCount: 100
+      maxIngressFlowCount: 100
+   acl-profile:
+      clientConnectDefaultAction: "allow"
+      publishTopicDefaultAction: "allow"
+      subscribeTopicDefaultAction: "allow"
+      topicSubscriptionDefaultAction: "allow"
+   
+   acl-profile:
 
 system:
    configFile: "config/system.yaml"
