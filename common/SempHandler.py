@@ -184,12 +184,10 @@ class SempHandler:
         log.enter ("Entering {}:{} url = {}".format( __class__.__name__, inspect.stack()[0][3], url))
         ignore_status = ['INVALID_PATH']
 
-
         semp_user = Cfg["router"]["sempUser"]
         semp_pass = Cfg["router"]["sempPassword"]
         
         log.info('SEMP DELETE url: {}'.format(url))
-
         log.debug ("   DELETE URL {} ({})".format(unquote(url), semp_user))
    
         resp = requests.delete(url, 
@@ -199,15 +197,19 @@ class SempHandler:
             verify=False)
         
         log.info ('SEMP DELETE returned: {}'.format(resp))
-        log.debug ('http_delete returning : {}'.format(json.dump(resp.json(), indent=4, sort_keys=True)))
+        #log.debug ('http_delete returning : {}'.format(json.dump(resp.json(), indent=4, sort_keys=True)))
         log.trace ('Response:\n%s',resp.json())
         if (resp.status_code != 200):
-            log.error ('Non-200 Response text: {}'.format(resp.text))
-            status = resp.json()['meta']['error']['status']
-            desc = resp.json()['meta']['error']['description']
+            json_resp = resp.json()
+            log.info ('Non-200 Response text: {}'.format(resp.text))
+            status = json_resp['meta']['error']['status']
+            desc = json_resp['meta']['error']['description']
 
             if status in ignore_status:
                 log.notice (f'Ignoring non success status {status}')
+                return "OK"
+            else:
+                return json_resp['meta']['error']['status']
         return resp
     
     #-------------------------------------------------------------

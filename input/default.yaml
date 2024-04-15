@@ -4,37 +4,41 @@
 
 # Router URL and credentials
 router:
-   label: "nram-dev1-solace-cloud"  #  used for dir name and logging purposes
-   sempUrl: "https://mr-connection-xoqmdwtfgbe.messaging.solace.cloud:943"
-   sempUser: "nram-dev1-admin"
-   sempPassword: "secret"
-   vpn: "nram-dev1"
+   label: "nram-localhost" #  used for dir name and logging purposes
+   sempUrl: "http://localhost:8080"
+   sempUser: "admin"
+   #sempPassword: "secret" # read from env
+   vpn: "default"
 
 
 # Run parameters
 run_params:
    # logging
    verbose: false
-   # Action to perform
-   action: 
-        # valid values: create, update, none
-        # valid entries: queues, subscriptions, client-username, client-profile, acl-profile
-        queues: "create"
-        subscriptions: "create"
-        client-usernames: "create"
-        client-profiles: "create"
-        acl-profiles: "create"
+   delete1: 
+   - "none"
+   update:
+   - "none"
+   delete: 
+   - "queues"
+   - "subscriptions"
+   - "acl-profiles"
+   - "client-usernames"
+   - "client-profiles"
 
 
 # User inputs
-# list of queues and topic subscriptions to create
+# list of object and properties to create / update
 queues:
-   - queueName: GitTest1NoSubs
-   - queueName: GitTest2WithSubs
+   - queueName: GitTest1
+     accessType: "exclusive"
+     maxMsgSpoolUsage: 1234
+   - queueName: GitTest2
      subscriptions:
         - test/topic/1
         - test/topic/*
    - queueName: Git/Test3
+     subscriptions:
         - test/>
 
 client-usernames:
@@ -49,18 +53,28 @@ client-usernames:
 
 client-profiles:
    - clientProfileName: "git-test1-profile"
+     allowBridgeConnectionsEnabled: true
+     allowGuaranteedEndpointCreateEnabled: true
+     allowGuaranteedMsgReceiveEnabled: true
+     allowGuaranteedMsgSendEnabled: true
+     allowSharedSubscriptionsEnabled: true
+     allowTransactedSessionsEnabled: true
    - clientProfileName: "git-test2-profile"
+     allowGuaranteedMsgReceiveEnabled: true
+     allowGuaranteedMsgSendEnabled: true
    - clientProfileName: "git-test3-profile"
 
 acl-profiles:
    - aclProfileName: "git-test1-acl"
+     clientConnectDefaultAction: "allow"
    - aclProfileName: "git-test2-acl"
+     publishTopicDefaultAction: 'disallow'
    - aclProfileName: "git-test3-acl"
    - aclProfileName: "git-test4-acl"
 
 
 # Template values for creating Queues
-templates:
+defaults:
    # Queue template to use for creating queues.
    # These values can be overwritten in the input CSV file
    # Any property not listed here / input CSV will use Solace defaults
@@ -70,7 +84,7 @@ templates:
       maxBindCount: 10
       maxDeliveredUnackedMsgsPerFlow: 1000
       maxMsgSize: 1000000
-      maxMsgSpoolUsage: 1234
+      maxMsgSpoolUsage: 1000
       maxRedeliveryCount: 2
       maxTtl: 0
       owner: "solace-cloud-client"
@@ -106,12 +120,9 @@ templates:
       maxEgressFlowCount: 100
       maxIngressFlowCount: 100
    acl-profile:
-      clientConnectDefaultAction: "allow"
+      clientConnectDefaultAction: "disallow"
       publishTopicDefaultAction: "allow"
       subscribeTopicDefaultAction: "allow"
-      topicSubscriptionDefaultAction: "allow"
    
-   acl-profile:
-
 system:
    configFile: "config/system.yaml"
