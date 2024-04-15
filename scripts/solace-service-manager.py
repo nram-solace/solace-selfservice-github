@@ -49,8 +49,8 @@ def main(argv):
     p = argparse.ArgumentParser()
     p.add_argument('--input', dest="input_file", required=True, 
                    help='user input Yaml file') 
-    p.add_argument('--patch', dest="patch_it", action='store_true', required=False, default=False, 
-                   help='user input csv file') 
+    #p.add_argument('--patch', dest="patch_it", action='store_true', required=False, default=False, 
+    #               help='user input csv file') 
     #p.add_argument('--subscriptions', '-s', dest="add_subscriptions", action='store_true', required=False, default=False,
     #               help='Add subscriptions to queues')
     p.add_argument( '--verbose', '-v', action="count",  required=False, default=0,
@@ -72,15 +72,13 @@ def main(argv):
 
         
     # create a single cfg file with all info
-    cfg = {}
+    cfg = input_data.copy()
     cfg['script_name'] = me
     cfg['system'] = system_config_all.copy() # store system cfg in the global Cfg dict
     # copy input data to Cfg
-    cfg['router'] = input_data['router'].copy() 
-    cfg['templates'] = input_data['templates'].copy()
     run_params = input_data['run_params']
     verbose = run_params['verbose']
-    action = run_params['action']
+    #action = run_params['action']
     if r.verbose:
         verbose = r.verbose
     cfg['verbose'] = verbose
@@ -109,64 +107,46 @@ def main(argv):
     # create semp handler -- see common/SimpleSempHandler.py
     semp_h = SempHandler.SempHandler(cfg, verbose)
     
+    ##if 'admin_action' in run_params:
+    #    for entry in action:
+    #        action[entry] = run_params['admin_action']
     #---------------------------------------------------------------------
     #  Queues
     #
-    if action['queues'] == 'create':
-        # create queue handlers
-        log.notice ('Creating Queues')
-        queue_h = QueueConfig.Queues(semp_h, cfg, verbose)
-        queue_h.create_queues (input_data['queues'])
-        
-    if action['queues'] == 'update':
-        log.warning ('Update queues not implemented yet')
-        
-        
-    #---------------------------------------------------------------------
-    #  Queue subscriptions
-    #    
-    if action['subscriptions'] == 'create':
-        log.notice ('Creating Queue Subscription')
-        # create queue handlers
-        queue_h = QueueConfig.Queues(semp_h, cfg, verbose)
-        queue_h.create_queue_subscriptions (input_data['queues'])
+    queue_h = QueueConfig.Queues(semp_h, cfg, verbose)
+    cluser_h = ClientUserConfig.ClientUserConfig(semp_h, cfg, verbose)    
 
-    if action['subscriptions'] == 'update':
-        log.warning ('Update queue subscriptions not implemented yet')
+    if 'create' in run_params:
+        for entry in run_params['create']:
+            print ('------------------------------------------------------')
+            log.notice ('Processing create {}'.format(entry))
+            if entry == 'queues':
+                queue_h.create_queues (input_data['queues'])
+            if entry == 'subscriptions':
+                queue_h.create_queue_subscriptions (input_data['queues'])
+            if entry == 'client-profiles':
+                cluser_h.create_client_profiles (input_data['client-profiles'])
+            if entry == 'acl-profiles':
+                cluser_h.create_acl_profiles (input_data['acl-profiles'])
+            if entry == 'client-usernames':
+                cluser_h.create_client_usernames (input_data['client-usernames'])
+    if 'delete' in run_params:
+        for entry in run_params['delete']:
+            print ('------------------------------------------------------')
+            log.notice ('Processing delete {}'.format(entry))
+            if entry == 'queues':
+                queue_h.delete_queues (input_data['queues'])
+            if entry == 'subscriptions':
+                log.notice ('Not implemented - delete subscriptions')
+                #queue_h.delete_queue_subscriptions (input_data['queues'])
+            if entry == 'client-profiles':
+                cluser_h.delete_client_profiles (input_data['client-profiles'])
+            if entry == 'acl-profiles':
+                cluser_h.delete_acl_profiles (input_data['acl-profiles'])
+            if entry == 'client-usernames':
+                cluser_h.delete_client_usernames (input_data['client-usernames'])
 
-        
-    #---------------------------------------------------------------------
-    #  Client Usernames
-    #    
-    if action['client-usernames'] == 'create':
-        log.notice ('Creating Client Usernames')
-        cluser_h = ClientUserConfig.ClientUserConfig(semp_h, cfg, verbose)
-        cluser_h.create_client_usernames (input_data['client-usernames'])
-
-    if action['client-usernames'] == 'update':
-        log.warning ('Update client-usernames not implemented yet')
-        
-        
-    #---------------------------------------------------------------------
-    #  Client Profiles
-    #    
-    if action['client-profiles'] == 'create':
-        log.warning ('Create client-profiles not implemented yet')
-
-    if action['client-profiles'] == 'update':
-        log.warning ('Update client-profiles not implemented yet')
-        
-        
-    #---------------------------------------------------------------------
-    #  ACL Profiles
-    #    
-    if action['acl-profiles'] == 'create':
-        log.warning ('Create acl-profiles not implemented yet')
-
-    if action['acl-profiles'] == 'update':
-        log.warning ('Update acl-profiles not implemented yet')
-        
-        
+                
     log.info ('{}-{} Done'.format(me, ver))
     
 # Program entry point
