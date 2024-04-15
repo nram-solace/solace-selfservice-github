@@ -39,6 +39,11 @@ class Queues():
                 topic_list.append(sub['subscriptionTopic'])
         return topic_list
     
+    
+    def create_queue_subscriptions(self, input_data):
+        self.create_queues(input_data, add_subscriptions = True)
+       
+        
     #--------------------------------------------------------------------
     # create_queues
     # Create Queues with http post. This does NOT patch existing queues

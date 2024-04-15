@@ -1,4 +1,7 @@
 ---
+# Input file for solace config management script
+# this file name (input/default.yaml) is hardcoded and this is the only file script will look for.
+
 # Router URL and credentials
 router:
    label: "nram-dev1-solace-cloud"  #  used for dir name and logging purposes
@@ -7,31 +10,30 @@ router:
    sempPassword: "secret"
    vpn: "nram-dev1"
 
+
+# Run parameters
+run_params:
+   # logging
+   verbose: false
+   # Action to perform
+   action: 
+        # valid values: create, update, none
+        # valid entries: queues, subscriptions, client-username, client-profile, acl-profile
+        queues: "create"
+        subscriptions: "create"
+        client-usernames: "create"
+        client-profiles: "create"
+        acl-profiles: "create"
+
+
+# User inputs
 # list of queues and topic subscriptions to create
 queues:
-   - queue: Test/GA//Sample/NoSubs
+   - queue: Test/Git/Sample/NoSubs
    - queue: Test/Git/Sample/WithSubs
      subscriptions:
         - test/topic/1
         - test/topic/*
-   - queue: Test/Git/2
-     subscriptions:
-        - test/topic/3
-        - test/topic/>
-        - test/topic/4
-        - test/topic/5
-   - queue: Test/Git/3
-   - queue: Test/Git/4
-   - queue: Test/Git/5
-   - queue: Test/Git/6
-   - queue: Test/Git/7
-     subscriptions:
-        - test/topic/6
-        - test/topic/7
-        - test/topic/8
-        - test/topic/9
-        - test/topic/10
-        - test/topic/11
 
 
 # Template values for creating Queues
