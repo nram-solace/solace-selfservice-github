@@ -56,7 +56,7 @@ jobs:
           #export http_proxy=$HTTP_PROXY
           #export https_proxy=$HTTPS_PROXY
           #echo "http_proxy set to $http_proxy"
-          python scripts/create-queues.py --input input/queues.yaml -v
+          python scripts/solace-service-manager.py --input input/default.yaml
         env:
           SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
           # required for NT
