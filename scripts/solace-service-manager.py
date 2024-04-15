@@ -24,13 +24,14 @@ import pprint
 sys.path.insert(0, os.path.abspath("."))
 from common import LogHandler
 from common import SempHandler
-from common import QueueConfig
 from common import YamlHandler
+from common import QueueConfig
+from common import ClientUserConfig
 
 pp = pprint.PrettyPrinter(indent=4)
 
 me = "create-queues"
-ver = 'v1.1'
+ver = 'v2.0'
 
 # Define the minimum required Python version
 MIN_PYTHON_VERSION = (3, 6)
@@ -104,7 +105,6 @@ def main(argv):
 
     # split input_df into regular queues and DLQs
     # Add your logic here
-    q_list = input_data['queues']
 
     # create semp handler -- see common/SimpleSempHandler.py
     semp_h = SempHandler.SempHandler(cfg, verbose)
@@ -115,7 +115,7 @@ def main(argv):
     if action['queues'] == 'create':
         # create queue handlers
         log.notice ('Creating Queues')
-        queue_h = QueueConfig.Queues(semp_h, cfg, q_list, verbose)
+        queue_h = QueueConfig.Queues(semp_h, cfg, verbose)
         queue_h.create_queues (input_data['queues'])
         
     if action['queues'] == 'update':
@@ -128,7 +128,7 @@ def main(argv):
     if action['subscriptions'] == 'create':
         log.notice ('Creating Queue Subscription')
         # create queue handlers
-        queue_h = QueueConfig.Queues(semp_h, cfg, q_list, verbose)
+        queue_h = QueueConfig.Queues(semp_h, cfg, verbose)
         queue_h.create_queue_subscriptions (input_data['queues'])
 
     if action['subscriptions'] == 'update':
@@ -139,7 +139,9 @@ def main(argv):
     #  Client Usernames
     #    
     if action['client-usernames'] == 'create':
-        log.warning ('Create client-usernames not implemented yet')
+        log.notice ('Creating Client Usernames')
+        cluser_h = ClientUserConfig.ClientUserConfig(semp_h, cfg, verbose)
+        cluser_h.create_client_usernames (input_data['client-usernames'])
 
     if action['client-usernames'] == 'update':
         log.warning ('Update client-usernames not implemented yet')
