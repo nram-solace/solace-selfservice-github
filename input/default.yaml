@@ -45,7 +45,6 @@ client-usernames:
      aclProfileName: "git-test2-acl"
      clientProfileName: "git-test2-profile"
    - clientUsername: "git-test3"
-   - clientUsername: "git-test4"
 
 client-profiles:
    - clientProfileName: "git-test1-profile"
