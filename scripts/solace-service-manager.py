@@ -125,7 +125,7 @@ def main(argv):
     if app_id not in inv_data:
         log.error ('Application ID: {} not found in inventory'.format(app_id))
         # print list of keys in the inventory
-        log.info ('Inventory keys:', inv_data.keys())
+        log.info ('Inventory keys: {}'.format(str(inv_data.keys())))
         sys.exit(1)
     router = inv_data[app_id]
     log.notice (f'Got the router config for {app_id}\n\tURL     : {router["sempUrl"]}\n\tUSER    : {router["sempUser"]}\n\tVPN     : {router["vpn"]}\n\tPASSWORD: read from env' )
@@ -164,6 +164,9 @@ def main(argv):
             if entry == 'acl-profiles':
                 cluser_h.create_acl_profiles (input_data['acl-profiles'])
             if entry == 'client-usernames':
+                # auto create client profiles and acl profiles for client-usernames
+                cluser_h.create_client_profiles (input_data['client-profiles'])
+                cluser_h.create_acl_profiles (input_data['acl-profiles'])
                 cluser_h.create_client_usernames (input_data['client-usernames'])
     if 'delete' in run_params and run_params['delete'] is not None:
         for entry in run_params['delete']:
@@ -172,7 +175,7 @@ def main(argv):
             if entry == 'queues':
                 queue_h.delete_queues (input_data['queues'])
             if entry == 'subscriptions':
-                log.notice ('Not implemented - delete subscriptions')
+                log.error ('Not implemented - delete subscriptions')
                 #queue_h.delete_queue_subscriptions (input_data['queues'])
             if entry == 'client-profiles':
                 cluser_h.delete_client_profiles (input_data['client-profiles'])
