@@ -15,6 +15,8 @@
 #
 # Ramesh Natarajan (nram), Solace PSG (ramesh.natarajan@solace.com)
 ########################################################################
+me = "solace-service-manager"
+ver = 'v2.2.2-2024-04-17'
 
 import sys, os
 import argparse
@@ -29,13 +31,9 @@ from common import QueueConfig
 from common import ClientUserConfig
 from common import Inventory
 
-pp = pprint.PrettyPrinter(indent=4)
-
-me = "solace-service-manager"
-ver = 'v2.2.1-2024-04-17'
-
 # Define the minimum required Python version
 MIN_PYTHON_VERSION = (3, 6)
+pp = pprint.PrettyPrinter(indent=4)
 
 class CustomEncoder(json.JSONEncoder):
     def iterencode(self, obj, _one_shot=False):
@@ -110,9 +108,9 @@ def main(argv):
     cfg['log_handler'] = log_h
 
     # Read the inventory file
-    print ('Reading inventory from {}'.format(system_cfg['invDir']))
+    print ('Reading inventory from {}'.format(system_cfg['inventoryDir']))
     inv = Inventory.Inventory(cfg, r.verbose)
-    inv_data = inv.read_inventory_dir(system_cfg['invDir'])
+    inv_data = inv.read_inventory_dir(system_cfg['inventoryDir'])
     
     log.info ('Starting {}-{}'.format(me, ver))
     log.info ('SYSTEM CONFIG : {}'.format(json.dumps(system_config_all, indent=2)))
