@@ -16,7 +16,7 @@
 # Ramesh Natarajan (nram), Solace PSG (ramesh.natarajan@solace.com)
 ########################################################################
 me = "solace-service-manager"
-ver = 'v2.2.2-2024-04-17'
+ver = 'v2.2.3 (2024-04-17)'
 
 import sys, os
 import argparse
@@ -125,7 +125,7 @@ def main(argv):
     if app_id not in inv_data:
         log.error ('Application ID: {} not found in inventory'.format(app_id))
         # print list of keys in the inventory
-        log.info ('Inventory keys:', inv_data.keys())
+        log.info ('Inventory keys: {}'.format(str(inv_data.keys())))
         sys.exit(1)
     router = inv_data[app_id]
     log.notice (f'Got the router config for {app_id}\n\tURL     : {router["sempUrl"]}\n\tUSER    : {router["sempUser"]}\n\tVPN     : {router["vpn"]}\n\tPASSWORD: read from env' )
@@ -153,7 +153,7 @@ def main(argv):
 
     if 'create' in run_params and run_params['create'] is not None:
         for entry in run_params['create']:
-            print ('------------------------------------------------------')
+            print ('\n')
             log.notice ('Processing create {}'.format(entry))
             if entry == 'queues':
                 queue_h.create_queues (input_data['queues'])
@@ -164,15 +164,18 @@ def main(argv):
             if entry == 'acl-profiles':
                 cluser_h.create_acl_profiles (input_data['acl-profiles'])
             if entry == 'client-usernames':
+                # auto create client profiles and acl profiles for client-usernames
+                cluser_h.create_client_profiles (input_data['client-profiles'])
+                cluser_h.create_acl_profiles (input_data['acl-profiles'])
                 cluser_h.create_client_usernames (input_data['client-usernames'])
     if 'delete' in run_params and run_params['delete'] is not None:
         for entry in run_params['delete']:
-            print ('------------------------------------------------------')
+            print ('\n')
             log.notice ('Processing delete {}'.format(entry))
             if entry == 'queues':
                 queue_h.delete_queues (input_data['queues'])
             if entry == 'subscriptions':
-                log.notice ('Not implemented - delete subscriptions')
+                log.error ('Not implemented - delete subscriptions')
                 #queue_h.delete_queue_subscriptions (input_data['queues'])
             if entry == 'client-profiles':
                 cluser_h.delete_client_profiles (input_data['client-profiles'])
