@@ -4,9 +4,9 @@ params:
   verbose: true
   create:
     - queues
-    - client-usernames
-    - client-profiles
-    - acl-profiles
+    #- client-usernames
+    #- client-profiles
+    #- acl-profiles
   update: null
 inputs:
   queues:
