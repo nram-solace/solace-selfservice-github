@@ -119,12 +119,16 @@ class Queues():
             print ('\n')
             log.notice (f"Creating queue {n}/{num_queues}: {entry_name}")
             resp = semp_h.http_post (semp_queue_config_url, semp_data)
-            if resp == 'ALREADY_EXISTS':
-                log.info (f'Queue {entry_name} exists. Skipping')
+            if resp == 'OK':
+                log.notice (f'Queue {entry_name} created')
+            elif resp == 'ALREADY_EXISTS':
+                log.warning (f'Queue {entry_name} exists.')
             else:
-                log.info (f'Queue {entry_name} created')
+                log.error (f'Queue {entry_name} create failed: {resp}')
             if add_subscriptions and 'subscriptions' in input_data:
                 self.add_topic_subscriptions(entry_name, input_data['subscriptions'])
+            jndi_name = f'Q_{entry_name}'
+            self.add_jndi_queue (entry_name, jndi_name)
     
     
     #--------------------------------------------------------------------
@@ -159,11 +163,12 @@ class Queues():
             #
             print ('\n')
             log.notice (f"Deleting queue {n}/{num_queues}: {queue}")
-            resp = semp_h.http_delete (f"{semp_queue_config_url}/{queue}")
+            queue_safe = quote(queue, safe='')
+            resp = semp_h.http_delete (f"{semp_queue_config_url}/{queue_safe}")
             if resp != 'OK':
                 log.warning (f'Delete Queue {queue} returned {resp}')
             else:
-                log.info (f'Queue {queue} deleted')
+                log.notice (f'Queue {queue} deleted')
     
     #--------------------------------------------------------------------
     # add_topic_subscriptions
@@ -192,5 +197,38 @@ class Queues():
             print ('\n')
             log.notice  (f"Adding subscription topic {n}/{max_n}: {topic} - {queue_name}")
             semp_queue_sub_config_url = f"{semp_config_url}/{msg_vpn_name}/queues/{queue_safe}/subscriptions"
-            semp_h.http_post (semp_queue_sub_config_url, data)
+            resp = semp_h.http_post (semp_queue_sub_config_url, data)
+            if resp == 'OK':
+                log.notice (f'Subscription for Topic {topic} created')
+            elif resp == 'ALREADY_EXISTS':
+                log.warning (f'Subscription for Topic {topic} exists.')
+            else:
+                log.error (f'Subscription for Topic {topic} failed: {resp}')
  
+    #--------------------------------------------------------------------
+    # add jndi queue mapping
+    #--------------------------------------------------------------------
+    def add_jndi_queue (self, queue_name, jndi_name):
+        log.info  (f'Adding JNDI queue mapping {jndi_name} to queue {queue_name}')
+        semp_h = self.semp_h
+        cfg = self.cfg
+        sys_cfg = cfg['system']
+        msg_vpn_name = cfg['router']['vpn']
+        semp_config_url = '{}/{}/msgVpns'.format(cfg['router']['sempUrl'], sys_cfg['semp']['configUrl'])
+        semp_queue_config_url = f"{semp_config_url}/{msg_vpn_name}/queues"
+        data = {}
+        data['msgVpnName'] = msg_vpn_name
+        data['physicalName'] = queue_name
+        data['queueName'] = jndi_name
+        # Escape special characters in topic
+        #queue_safe = quote(queue_name, safe='')
+        print ('\n')
+        log.notice  (f"Adding JNDI queue mapping: {jndi_name} - {queue_name}")
+        semp_queue_sub_config_url = f"{semp_config_url}/{msg_vpn_name}/jndiQueues"
+        resp = semp_h.http_post (semp_queue_sub_config_url, data)
+        if resp == 'OK':
+            log.notice (f'JNDI for Queue {queue_name} created') 
+        elif resp == 'ALREADY_EXISTS':
+            log.warning (f'JNDI for Queue {queue_name} exists.')
+        else:
+            log.error (f'JNDI for Queue {queue_name} failed: {resp}')        

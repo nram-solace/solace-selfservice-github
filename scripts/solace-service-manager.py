@@ -27,23 +27,24 @@ from common import SempHandler
 from common import YamlHandler
 from common import QueueConfig
 from common import ClientUserConfig
+from common import Inventory
 
 pp = pprint.PrettyPrinter(indent=4)
 
-me = "create-queues"
-ver = 'v2.0'
+me = "solace-service-manager"
+ver = 'v2.2'
 
 # Define the minimum required Python version
 MIN_PYTHON_VERSION = (3, 6)
 
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, dict):
+            return {k: v if k != "sempPassword" else "*****" for k, v in obj.items()}
+        return json.JSONEncoder.default(self, obj)
+
 def main(argv):
     """ program entry drop point """
-
-    # print python version
-    print ("Python version: ", sys.version)
-    #print ("Python path: ", sys.path)
-    # print program and args
-    print ('Program: ', sys.argv[0], str(sys.argv[1:]))
     
     # parse command line arguments
     p = argparse.ArgumentParser()
@@ -57,52 +58,75 @@ def main(argv):
                 help='Verbose output. use -vvv for tracing')
     r = p.parse_args()
 
-    print ('{}-{} Starting\n'.format(me,ver))
-    
-    print ("http proxy: ", os.environ.get('http_proxy'))
+    print ('{}-{} Starting {} args: {}\n'.format(me,ver, sys.argv[0], str(sys.argv[1:])))
+
+    if r.verbose:    
+        print ("http proxy: ", os.environ.get('http_proxy'))
+        print ("Python version: ", sys.version)
     
     print ("Reading input file: {}".format(r.input_file))
     yaml_h = YamlHandler.YamlHandler()
-    input_data = yaml_h.read_config_file(r.input_file)
+    input_data_all = yaml_h.read_config_file(r.input_file)
+    #if r.verbose:
+    #    print ('Input Data:'); pp.pprint (input_data_all)
+    input_data = input_data_all['inputs']   
     
-    sys_cfg_file = input_data['system']['configFile']
+    sys_cfg_file = input_data_all['system']['configFile']
     print ("Reading system config file: {}".format(sys_cfg_file))
 
     system_config_all = yaml_h.read_config_file (sys_cfg_file)
-
+    system_cfg = system_config_all['system']
         
     # create a single cfg file with all info
-    cfg = input_data.copy()
+    cfg = input_data_all.copy()
+    cfg['router'] = {}
     cfg['script_name'] = me
     cfg['system'] = system_config_all.copy() # store system cfg in the global Cfg dict
     # copy input data to Cfg
-    run_params = input_data['run_params']
+    run_params = input_data_all['params']
     verbose = run_params['verbose']
     #action = run_params['action']
     if r.verbose:
         verbose = r.verbose
     cfg['verbose'] = verbose
-    if verbose > 2:
-        print ('SYSTEM CONFIG'); pp.pprint (system_config_all)
+    #if verbose :
+    #    print ('SYSTEM CONFIG'); pp.pprint (system_config_all)
                 
     # read password from environment variable
-    if os.environ.get('SEMP_PASSWORD') is None:
-        print ('ERROR: SEMP_PASSWORD environment variable not set')
-        sys.exit(1)
-    print ('Using SEMP_PASSWORD from environment')
-    cfg['router']['sempPassword'] = os.environ.get('SEMP_PASSWORD')
+    #if os.environ.get('SEMP_PASSWORD') is None:
+    #    print ('ERROR: SEMP_PASSWORD environment variable not set')
+    #    sys.exit(1)
     
-
     log_h = LogHandler.LogHandler(cfg)
     log = log_h.get()
-    log.info('Starting {}-{}'.format(me, ver))
-    log.info ('SYSTEM CONFIG : {}'.format(json.dumps(system_config_all, indent=2)))
-    log.info ('Input Data    : {}'.format(json.dumps(input_data, indent=2)))
+
+
     # add this after dumping Cfg. josn.dumps() can't handle log object
     cfg['log_handler'] = log_h
 
-    # split input_df into regular queues and DLQs
-    # Add your logic here
+    # Read the inventory file
+    print ('Reading inventory from {}'.format(system_cfg['invDir']))
+    inv = Inventory.Inventory(cfg, r.verbose)
+    inv_data = inv.read_inventory_dir(system_cfg['invDir'])
+    
+    log.info('Starting {}-{}'.format(me, ver))
+    log.info ('SYSTEM CONFIG : {}'.format(json.dumps(system_config_all, indent=2)))
+    log.info ('USER INPUT    : {}'.format(json.dumps(input_data_all, indent=2)))
+    #leaks password
+    #log.info ('INVENTORY     : {}'.format(json.dumps(inv_data, cls=CustomEncoder,indent=2)))            
+    
+    app_id = input_data_all['params']['application-id']
+    if app_id not in inv_data:
+        log.error ('Application ID: {} not found in inventory'.format(app_id))
+        # print list of keys in the inventory
+        log.info ('Inventory keys:', inv_data.keys())
+        sys.exit(1)
+    router = inv_data[app_id]
+    log.notice (f'Got the router config for {app_id}\n\tURL     : {router["sempUrl"]}\n\tUSER    : {router["sempUser"]}\n\tVPN     : {router["vpn"]}\n\tPASSWORD: read from env' )
+
+
+    cfg['router'] = router
+    #cfg['router']['sempPassword'] = os.environ.get('SEMP_PASSWORD')
 
     # create semp handler -- see common/SimpleSempHandler.py
     semp_h = SempHandler.SempHandler(cfg, verbose)
@@ -116,7 +140,7 @@ def main(argv):
     queue_h = QueueConfig.Queues(semp_h, cfg, verbose)
     cluser_h = ClientUserConfig.ClientUserConfig(semp_h, cfg, verbose)    
 
-    if 'create' in run_params:
+    if 'create' in run_params and run_params['create'] is not None:
         for entry in run_params['create']:
             print ('------------------------------------------------------')
             log.notice ('Processing create {}'.format(entry))
@@ -130,7 +154,7 @@ def main(argv):
                 cluser_h.create_acl_profiles (input_data['acl-profiles'])
             if entry == 'client-usernames':
                 cluser_h.create_client_usernames (input_data['client-usernames'])
-    if 'delete' in run_params:
+    if 'delete' in run_params and run_params['delete'] is not None:
         for entry in run_params['delete']:
             print ('------------------------------------------------------')
             log.notice ('Processing delete {}'.format(entry))

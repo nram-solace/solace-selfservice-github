@@ -4,6 +4,7 @@
 system:
   outputDir: output/json
   logDir: logs
+  invDir: inventory
 
 # SEMP related configs
 semp:
