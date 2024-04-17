@@ -153,7 +153,7 @@ def main(argv):
 
     if 'create' in run_params and run_params['create'] is not None:
         for entry in run_params['create']:
-            print ('------------------------------------------------------')
+            print ('\n')
             log.notice ('Processing create {}'.format(entry))
             if entry == 'queues':
                 queue_h.create_queues (input_data['queues'])
@@ -170,7 +170,7 @@ def main(argv):
                 cluser_h.create_client_usernames (input_data['client-usernames'])
     if 'delete' in run_params and run_params['delete'] is not None:
         for entry in run_params['delete']:
-            print ('------------------------------------------------------')
+            print ('\n')
             log.notice ('Processing delete {}'.format(entry))
             if entry == 'queues':
                 queue_h.delete_queues (input_data['queues'])
