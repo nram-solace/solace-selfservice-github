@@ -63,8 +63,15 @@ class Inventory:
                             # check if password is in the environment
                             if os.environ.get(semp_pass_env_var) is None:
                                 log.warning ('SEMP_PASSWORD environment variable ({}) not set for {}'.format(semp_pass_env_var, name))
+                                if os.environ.get('SEMP_PASSWORD') is not None:
+                                    log.notice ('Using password from env {} for {}'.format('SEMP_PASSWORD', name))
+                                    inv[name]['sempPassword'] = os.environ.get('SEMP_PASSWORD')
+                                    #inv[name]['SEMP_PASSWORD_ENV_VAR'] = semp_pass_env_var
+                                else:
+                                    log.error ('Missing password for {}'.format(name))
+
                             else:
-                                log.info ('Found password for {} in environment'.format(name))
+                                log.info ('Using password from env {} for {} in environment'.format(semp_pass_env_var, name))
                                 inv[name]['sempPassword'] = os.environ.get(semp_pass_env_var)
                                 
                     
