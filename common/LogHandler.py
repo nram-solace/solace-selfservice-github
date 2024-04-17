@@ -39,7 +39,7 @@ class ColoredFormatter(logging.Formatter):
        logging.ENTER: colors.MAGENTA,
        logging.DEBUG: colors.WHITE,
        logging.INFO: colors.BLUE,
-       logging.STATUS: colors.CYAN,
+       logging.STATUS: colors.GREEN,
        logging.NOTICE: colors.CYAN,
        logging.WARNING: colors.YELLOW,
        logging.ERROR: colors.RED,
