@@ -18,18 +18,13 @@ params:
    verbose: false
    create:
       - "queues"
-      #- "subscriptions"
-      #- "acl-profiles"
-      #- "client-usernames"
-      #- "client-profiles"
+      - "subscriptions"
+      - "acl-profiles"
+      - "client-usernames"
+      - "client-profiles"
    update:
-      - "none"
-   delete:
-      #- "queues"
-      #- "subscriptions"
-      #- "acl-profiles"
-      #- "client-usernames"
-      #- "client-profiles"
+      #- "none"
+
 
 
 # User inputs

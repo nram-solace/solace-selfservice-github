@@ -32,7 +32,7 @@ from common import Inventory
 pp = pprint.PrettyPrinter(indent=4)
 
 me = "solace-service-manager"
-ver = 'v2.2'
+ver = 'v2.2.1-2024-04-17'
 
 # Define the minimum required Python version
 MIN_PYTHON_VERSION = (3, 6)
@@ -64,6 +64,11 @@ def main(argv):
         print ("http proxy: ", os.environ.get('http_proxy'))
         print ("Python version: ", sys.version)
     
+    # check if input file exists
+    if not os.path.exists(r.input_file):
+        print ('ERROR: input file {} not found'.format(r.input_file))
+        sys.exit(1)
+        
     print ("Reading input file: {}".format(r.input_file))
     yaml_h = YamlHandler.YamlHandler()
     input_data_all = yaml_h.read_config_file(r.input_file)
