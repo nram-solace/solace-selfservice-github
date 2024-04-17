@@ -32,7 +32,7 @@ from common import Inventory
 pp = pprint.PrettyPrinter(indent=4)
 
 me = "solace-service-manager"
-ver = 'v2.2'
+ver = 'v2.2.1-2024-04-17'
 
 # Define the minimum required Python version
 MIN_PYTHON_VERSION = (3, 6)
