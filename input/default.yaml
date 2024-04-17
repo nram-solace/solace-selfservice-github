@@ -1,124 +1,97 @@
 ---
-# Input file for solace config management script
-# this file name (input/default.yaml) is hardcoded
-# this is the only file script will look for.
-# Structure of the file
-# router:
-# run_params:
-# inputs:
-# defaults:
-# run_params:
-# system:
-
-# Run parameters
 params:
-   # application-id should be in oen of the inventory/*.yaml file.
-   application-id: "nram-cloud-test"
-   # logging level
-   verbose: false
-   create:
-      - "queues"
-   update:
-      - "none"
-
-
-# User inputs
-# list of object and properties to create / update
+  application-id: nram-cloud-test
+  verbose: true
+  create:
+    - queues
+    - client-usernames
+    - client-profiles
+    - acl-profiles
+  update: null
 inputs:
-   queues:
-      - queueName: GitTest10
-        accessType: "exclusive"
-        maxMsgSpoolUsage: 1234
-      - queueName: GitTest2
-        subscriptions:
-           - test/topic/1
-           - test/topic/*
-      - queueName: Git/Test3
-        subscriptions:
-           - test/>
-
-   client-usernames:
-      - clientUsername: "git-test1"
-        aclProfileName: "git-test1-acl"
-        clientProfileName: "git-test1-profile"
-      - clientUsername: "git-test2"
-        aclProfileName: "git-test2-acl"
-        clientProfileName: "git-test2-profile"
-      - clientUsername: "git-test3"
-      - clientUsername: "git-test4"
-
-   client-profiles:
-      - clientProfileName: "git-test1-profile"
-        allowBridgeConnectionsEnabled: true
-        allowGuaranteedEndpointCreateEnabled: true
-        allowGuaranteedMsgReceiveEnabled: true
-        allowGuaranteedMsgSendEnabled: true
-        allowSharedSubscriptionsEnabled: true
-        allowTransactedSessionsEnabled: true
-      - clientProfileName: "git-test2-profile"
-        allowGuaranteedMsgReceiveEnabled: true
-        allowGuaranteedMsgSendEnabled: true
-      - clientProfileName: "git-test3-profile"
-
-   acl-profiles:
-      - aclProfileName: "git-test1-acl"
-        clientConnectDefaultAction: "allow"
-      - aclProfileName: "git-test2-acl"
-        publishTopicDefaultAction: 'disallow'
-      - aclProfileName: "git-test3-acl"
-      - aclProfileName: "git-test4-acl"
-
-
-# Template values for creating Queues
+  queues:
+    - queueName: GitTest11
+      accessType: exclusive
+      maxMsgSpoolUsage: 1234
+    - queueName: GitTest12
+      subscriptions:
+        - test/topic/1
+        - test/topic/*
+    - queueName: Git/Test13
+      subscriptions:
+        - test/>
+  client-usernames:
+    - clientUsername: git-test1
+      aclProfileName: git-test1-acl
+      clientProfileName: git-test1-profile
+    - clientUsername: git-test2
+      aclProfileName: git-test2-acl
+      clientProfileName: git-test2-profile
+    - clientUsername: git-test3
+    - clientUsername: git-test4
+  client-profiles:
+    - clientProfileName: git-test1-profile
+      allowBridgeConnectionsEnabled: true
+      allowGuaranteedEndpointCreateEnabled: true
+      allowGuaranteedMsgReceiveEnabled: true
+      allowGuaranteedMsgSendEnabled: true
+      allowSharedSubscriptionsEnabled: true
+      allowTransactedSessionsEnabled: true
+    - clientProfileName: git-test2-profile
+      allowGuaranteedMsgReceiveEnabled: true
+      allowGuaranteedMsgSendEnabled: true
+    - clientProfileName: git-test3-profile
+  acl-profiles:
+    - aclProfileName: git-test1-acl
+      clientConnectDefaultAction: allow
+    - aclProfileName: git-test2-acl
+      publishTopicDefaultAction: disallow
+    - aclProfileName: git-test3-acl
+    - aclProfileName: git-test4-acl
 defaults:
-   # Queue template to use for creating queues.
-   # These values can be overwritten in the input CSV file
-   # Any property not listed here / input CSV will use Solace defaults
-   queue:
-      accessType: "non-exclusive"
-      deadMsgQueue: "#DEAD_MSG_QUEUE"
-      maxBindCount: 10
-      maxDeliveredUnackedMsgsPerFlow: 1000
-      maxMsgSize: 1000000
-      maxMsgSpoolUsage: 1000
-      maxRedeliveryCount: 2
-      maxTtl: 0
-      owner: "solace-cloud-client"
-      permission: "no-access"
-      redeliveryEnabled: true
-      respectTtlEnabled: true
-      # subscriptionTopic: ""
-   dmqueue:
-      accessType: "exclusive"
-      deadMsgQueue: "#DEAD_MSG_QUEUE"
-      maxBindCount: 1
-      maxDeliveredUnackedMsgsPerFlow: 1000
-      maxMsgSize: 1000000
-      maxMsgSpoolUsage: 5000
-      maxRedeliveryCount: 0
-      maxTtl: 0
-      owner: "solace-cloud-client"
-      permission: "no-access"
-      redeliveryEnabled: false
-      respectTtlEnabled: false
-      subscriptionTopic: ""
-   client-user:
-      clientProfileName: "default"
-      aclProfileName: "default"
-   client-profile:
-      allowBridgeConnectionsEnabled: false
-      allowGuaranteedEndpointCreateEnabled: false
-      allowGuaranteedMsgReceiveEnabled: false
-      allowGuaranteedMsgSendEnabled: false
-      allowSharedSubscriptionsEnabled: false
-      allowTransactedSessionsEnabled: false
-      maxConnectionCountPerClientUsername: 100
-      maxEgressFlowCount: 100
-      maxIngressFlowCount: 100
-   acl-profile:
-      clientConnectDefaultAction: "disallow"
-      publishTopicDefaultAction: "allow"
-      subscribeTopicDefaultAction: "allow"
-
+  queue:
+    accessType: non-exclusive
+    deadMsgQueue: "#DEAD_MSG_QUEUE"
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 2
+    maxTtl: 0
+    owner: solace-cloud-client
+    permission: no-access
+    redeliveryEnabled: true
+    respectTtlEnabled: true
+  dmqueue:
+    accessType: exclusive
+    deadMsgQueue: "#DEAD_MSG_QUEUE"
+    maxBindCount: 1
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 5000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: solace-cloud-client
+    permission: no-access
+    redeliveryEnabled: false
+    respectTtlEnabled: false
+    subscriptionTopic: ""
+  client-user:
+    clientProfileName: default
+    aclProfileName: default
+  client-profile:
+    allowBridgeConnectionsEnabled: false
+    allowGuaranteedEndpointCreateEnabled: false
+    allowGuaranteedMsgReceiveEnabled: false
+    allowGuaranteedMsgSendEnabled: false
+    allowSharedSubscriptionsEnabled: false
+    allowTransactedSessionsEnabled: false
+    maxConnectionCountPerClientUsername: 100
+    maxEgressFlowCount: 100
+    maxIngressFlowCount: 100
+  acl-profile:
+    clientConnectDefaultAction: disallow
+    publishTopicDefaultAction: allow
+    subscribeTopicDefaultAction: allow
 system:
-   configFile: "config/system.yaml"
+  configFile: config/system.yaml
