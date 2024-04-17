@@ -10,14 +10,14 @@ params:
   update: null
 inputs:
   queues:
-    - queueName: GitTest120
+    - queueName: GitTest130
       accessType: exclusive
       maxMsgSpoolUsage: 1234
-    - queueName: GitTest21
+    - queueName: GitTest31
       subscriptions:
         - test/topic/1
         - test/topic/*
-    - queueName: Git/Test22
+    - queueName: Git/Test32
       subscriptions:
         - test/>
   client-usernames:
