@@ -72,10 +72,12 @@ class ClientUserConfig():
             print ('\n')
             log.notice (f"Creating Client username {n}/{num_entries}: {entry_name}")
             resp = semp_h.http_post (my_semp_config_url, semp_data)
-            if resp == 'ALREADY_EXISTS':
-                log.info (f'Client User {entry_name} exists. Skipping')
+            if resp == 'OK':
+                log.notice (f'Client User {entry_name} created')
+            elif resp == 'ALREADY_EXISTS':
+                log.warning (f'Client User {entry_name} exists.')
             else:
-                log.info (f'Client User {entry_name} created')
+                log.error (f'Client User {entry_name} create failed with {resp}')
 
 
     #--------------------------------------------------------------------
@@ -126,7 +128,7 @@ class ClientUserConfig():
             if resp != '200':
                 log.warning (f'Delete Client User {entry_name} returned {resp}')
             else:
-                log.info (f'Client User {entry_name} deleted')
+                log.notice (f'Client User {entry_name} deleted')
                 
     #--------------------------------------------------------------------
     # create_acl_profiles
@@ -174,10 +176,12 @@ class ClientUserConfig():
             print ('\n')
             log.notice (f"Creating ACL Profile {n}/{num_entries}: {entry_name}")
             resp = semp_h.http_post (my_semp_config_url, semp_data)
-            if resp == 'ALREADY_EXISTS':
-                log.info (f'ACL Profile {entry_name} exists. Skipping')
+            if resp == 'OK':
+                log.notice (f'ACL Profile {entry_name} created')
+            elif resp == 'ALREADY_EXISTS':
+                log.warning (f'ACL Profile {entry_name} exists.')
             else:
-                log.info (f'ACL Profile {entry_name} created')
+                log.error (f'ACL Profile {entry_name} create failed with {resp}')
                 
     #--------------------------------------------------------------------
     # delete_acl_profiles
@@ -227,7 +231,7 @@ class ClientUserConfig():
             if resp != 'OK':
                 log.warning (f'Delete ACL Profile {entry_name} returned {resp}')
             else:
-                log.info (f'ACL Profile {entry_name} deleted')
+                log.notice (f'ACL Profile {entry_name} deleted')
         
     #--------------------------------------------------------------------
     # create_client_profiles
@@ -275,10 +279,12 @@ class ClientUserConfig():
                 print ('\n')
                 log.notice (f"Creating Client Profile {n}/{num_entries}: {entry_name}")
                 resp = semp_h.http_post (my_semp_config_url, semp_data)
-                if resp == 'ALREADY_EXISTS':
-                    log.info (f'Client Profile {entry_name} exists. Skipping')
+                if resp == 'OK':
+                    log.notice (f'Client Profile {entry_name} created')
+                elif resp == 'ALREADY_EXISTS':
+                    log.warning (f'Client Profile {entry_name} exists.')
                 else:
-                    log.info (f'Client Profile {entry_name} created')
+                    log.error (f'Client Profile {entry_name} create failed with {resp}')
 
 
                 
@@ -330,4 +336,4 @@ class ClientUserConfig():
             if resp != 'OK':
                 log.warning (f'Delete Client Profile {entry_name} returned {resp}')
             else:
-                log.info (f'Client Profile {entry_name} deleted')
+                log.notice (f'Client Profile {entry_name} deleted')

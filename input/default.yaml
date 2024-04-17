@@ -1,76 +1,82 @@
 ---
 # Input file for solace config management script
-# this file name (input/default.yaml) is hardcoded and this is the only file script will look for.
-
-# Router URL and credentials
-router:
-   label: "nram-localhost" #  used for dir name and logging purposes
-   sempUrl: "http://localhost:8080"
-   sempUser: "admin"
-   #sempPassword: "secret" # read from env
-   vpn: "default"
-
+# this file name (input/default.yaml) is hardcoded
+# this is the only file script will look for.
+# Structure of the file
+# router:
+# run_params:
+# inputs:
+# defaults:
+# run_params:
+# system:
 
 # Run parameters
-run_params:
-   # logging
+params:
+   # application-id should be in oen of the inventory/*.yaml file.
+   application-id: "nram-local-dev"
+   # logging level
    verbose: false
-   delete1: 
-   - "none"
+   create:
+      - "queues"
+      #- "subscriptions"
+      #- "acl-profiles"
+      #- "client-usernames"
+      #- "client-profiles"
    update:
-   - "none"
-   delete: 
-   - "queues"
-   - "subscriptions"
-   - "acl-profiles"
-   - "client-usernames"
-   - "client-profiles"
+      - "none"
+   delete:
+      #- "queues"
+      #- "subscriptions"
+      #- "acl-profiles"
+      #- "client-usernames"
+      #- "client-profiles"
 
 
 # User inputs
 # list of object and properties to create / update
-queues:
-   - queueName: GitTest1
-     accessType: "exclusive"
-     maxMsgSpoolUsage: 1234
-   - queueName: GitTest2
-     subscriptions:
-        - test/topic/1
-        - test/topic/*
-   - queueName: Git/Test3
-     subscriptions:
-        - test/>
+inputs:
+   queues:
+      - queueName: GitTest1
+        accessType: "exclusive"
+        maxMsgSpoolUsage: 1234
+      - queueName: GitTest2
+        subscriptions:
+           - test/topic/1
+           - test/topic/*
+      - queueName: Git/Test3
+        subscriptions:
+           - test/>
 
-client-usernames:
-   - clientUsername: "git-test1"
-     aclProfileName: "git-test1-acl"
-     clientProfileName: "git-test1-profile"
-   - clientUsername: "git-test2"
-     aclProfileName: "git-test2-acl"
-     clientProfileName: "git-test2-profile"
-   - clientUsername: "git-test3"
-   - clientUsername: "git-test4"
+   client-usernames:
+      - clientUsername: "git-test1"
+        aclProfileName: "git-test1-acl"
+        clientProfileName: "git-test1-profile"
+      - clientUsername: "git-test2"
+        aclProfileName: "git-test2-acl"
+        clientProfileName: "git-test2-profile"
+      - clientUsername: "git-test3"
+      - clientUsername: "git-test4"
 
-client-profiles:
-   - clientProfileName: "git-test1-profile"
-     allowBridgeConnectionsEnabled: true
-     allowGuaranteedEndpointCreateEnabled: true
-     allowGuaranteedMsgReceiveEnabled: true
-     allowGuaranteedMsgSendEnabled: true
-     allowSharedSubscriptionsEnabled: true
-     allowTransactedSessionsEnabled: true
-   - clientProfileName: "git-test2-profile"
-     allowGuaranteedMsgReceiveEnabled: true
-     allowGuaranteedMsgSendEnabled: true
-   - clientProfileName: "git-test3-profile"
+   client-profiles:
+      - clientProfileName: "git-test1-profile"
+        allowBridgeConnectionsEnabled: true
+        allowGuaranteedEndpointCreateEnabled: true
+        allowGuaranteedMsgReceiveEnabled: true
+        allowGuaranteedMsgSendEnabled: true
+        allowSharedSubscriptionsEnabled: true
+        allowTransactedSessionsEnabled: true
+      - clientProfileName: "git-test2-profile"
+        allowGuaranteedMsgReceiveEnabled: true
+        allowGuaranteedMsgSendEnabled: true
+      - clientProfileName: "git-test3-profile"
 
-acl-profiles:
-   - aclProfileName: "git-test1-acl"
-     clientConnectDefaultAction: "allow"
-   - aclProfileName: "git-test2-acl"
-     publishTopicDefaultAction: 'disallow'
-   - aclProfileName: "git-test3-acl"
-   - aclProfileName: "git-test4-acl"
+   acl-profiles:
+      - aclProfileName: "git-test1-acl"
+        clientConnectDefaultAction: "allow"
+      - aclProfileName: "git-test2-acl"
+        publishTopicDefaultAction: 'disallow'
+      - aclProfileName: "git-test3-acl"
+      - aclProfileName: "git-test4-acl"
 
 
 # Template values for creating Queues
@@ -106,7 +112,7 @@ defaults:
       redeliveryEnabled: false
       respectTtlEnabled: false
       subscriptionTopic: ""
-   client-user: 
+   client-user:
       clientProfileName: "default"
       aclProfileName: "default"
    client-profile:
@@ -123,6 +129,6 @@ defaults:
       clientConnectDefaultAction: "disallow"
       publishTopicDefaultAction: "allow"
       subscribeTopicDefaultAction: "allow"
-   
+
 system:
    configFile: "config/system.yaml"
