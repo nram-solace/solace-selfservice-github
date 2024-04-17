@@ -39,9 +39,9 @@ class DummyResponse:
 class SempHandler:
     """ Solace SEMPv2 Parser implementation """
     
-    def __init__(self, cfg, vpn="default", outdir = "output/default", verbose = 0):
+    def __init__(self, cfg, vpn="default", outdir = "output/default"):
         global Verbose, Cfg, log, json_h
-        Verbose = verbose
+        Verbose = cfg['verbose']
         log = cfg['log_handler'].get()
         Cfg = cfg
         json_h = JsonHandler.JsonHandler(Cfg)
@@ -113,7 +113,7 @@ class SempHandler:
             log.debug (' http_post returned {}'. format(json_resp['meta']['responseCode']))
             return "OK"          
         else:
-            log.error  ("http_post returned {} ({})".format(json_resp['meta']['responseCode'],
+            log.warning  ("http_post returned {} ({})".format(json_resp['meta']['responseCode'],
                                             json_resp['meta']['error']['status']))
             log.debug (json_resp['meta']['error']['description'])
             return json_resp['meta']['error']['status']
@@ -184,12 +184,10 @@ class SempHandler:
         log.enter ("Entering {}:{} url = {}".format( __class__.__name__, inspect.stack()[0][3], url))
         ignore_status = ['INVALID_PATH']
 
-
         semp_user = Cfg["router"]["sempUser"]
         semp_pass = Cfg["router"]["sempPassword"]
         
         log.info('SEMP DELETE url: {}'.format(url))
-
         log.debug ("   DELETE URL {} ({})".format(unquote(url), semp_user))
    
         resp = requests.delete(url, 
@@ -199,16 +197,21 @@ class SempHandler:
             verify=False)
         
         log.info ('SEMP DELETE returned: {}'.format(resp))
-        log.debug ('http_delete returning : {}'.format(json.dump(resp.json(), indent=4, sort_keys=True)))
-        log.trace ('Response:\n%s',resp.json())
+
+        #log.debug ('http_delete returning : {}'.format(json.dump(resp.json(), indent=4, sort_keys=True)))
+        #log.trace ('Response:\n%s',resp.json())
         if (resp.status_code != 200):
-            log.error ('Non-200 Response text: {}'.format(resp.text))
-            status = resp.json()['meta']['error']['status']
-            desc = resp.json()['meta']['error']['description']
+            json_resp = resp.json()
+            log.info ('Non-200 Response text: {}'.format(resp.text))
+            status = json_resp['meta']['error']['status']
+            desc = json_resp['meta']['error']['description']
 
             if status in ignore_status:
                 log.notice (f'Ignoring non success status {status}')
-        return resp
+                return "OK"
+            else:
+                return json_resp['meta']['error']['status']
+        return "OK"
     
     #-------------------------------------------------------------
     # Higher order functions for get
