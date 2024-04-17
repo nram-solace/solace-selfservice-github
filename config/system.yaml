@@ -2,9 +2,9 @@
 # System configs
 # DONOT CHANGE VALUES BELOW
 system:
-  outputDir: output/json
+  outputDir: output
   logDir: logs
-  invDir: inventory
+  inventoryDir: inventory
 
 # SEMP related configs
 semp:
