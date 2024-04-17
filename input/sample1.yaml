@@ -13,20 +13,30 @@
 # Run parameters
 params:
    # application-id should be in oen of the inventory/*.yaml file.
-   application-id: "nram-cloud-test"
+   application-id: "nram-local-dev"
    # logging level
    verbose: false
    create:
       - "queues"
+      #- "subscriptions"
+      #- "acl-profiles"
+      #- "client-usernames"
+      #- "client-profiles"
    update:
       - "none"
+   delete:
+      #- "queues"
+      #- "subscriptions"
+      #- "acl-profiles"
+      #- "client-usernames"
+      #- "client-profiles"
 
 
 # User inputs
 # list of object and properties to create / update
 inputs:
    queues:
-      - queueName: GitTest10
+      - queueName: GitTest1
         accessType: "exclusive"
         maxMsgSpoolUsage: 1234
       - queueName: GitTest2
