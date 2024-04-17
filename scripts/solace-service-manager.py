@@ -128,6 +128,7 @@ def main(argv):
     cfg['router'] = router
     if 'sempPassword' not in router:
         log.error ('sempPassword not set in config nor found in inventory for {}'.format(app_id))
+        log.info('Check the environment variable: {}'.format(router['SEMP_PASSWORD_ENV_VAR']))
         sys.exit(1)
         
     #cfg['router']['sempPassword'] = os.environ.get('SEMP_PASSWORD')
