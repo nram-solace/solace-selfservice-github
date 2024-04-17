@@ -10,10 +10,62 @@ import logging
 import time
 import json
 
+
+# custom levels
+logging.TRACE = 5  # trace 
+logging.ENTER = 6  # trace - enter function
+logging.STATUS = 32  # status 
+logging.NOTICE = 34  # positive yet important 
+    
+
 def ts(mode=1):
     if mode == 0:
         return 'now'
     return time.strftime("%Y%m%d-%H%M%S")
+ 
+class colors:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    MAGENTA = '\033[95m'
+    CYAN = '\033[96m'
+    WHITE = '\033[97m'
+    RESET = '\033[0m'
+ 
+class ColoredFormatter(logging.Formatter):
+    log_colors = {
+       logging.TRACE: colors.WHITE,
+       logging.ENTER: colors.MAGENTA,
+       logging.DEBUG: colors.WHITE,
+       logging.INFO: colors.BLUE,
+       logging.STATUS: colors.GREEN,
+       logging.NOTICE: colors.CYAN,
+       logging.WARNING: colors.YELLOW,
+       logging.ERROR: colors.RED,
+       logging.CRITICAL: colors.RED,
+       logging.FATAL: colors.RED
+         
+      }
+   
+    def format(self, record):
+        log_color = colors.WHITE  # Default color for log messages
+
+        if record.levelno == logging.DEBUG:
+            log_color = colors.CYAN
+        elif record.levelno == logging.INFO:
+            log_color = colors.GREEN
+        elif record.levelno == logging.WARNING:
+            log_color = colors.YELLOW
+        elif record.levelno == logging.ERROR or record.levelno == logging.CRITICAL:
+            log_color = colors.RED
+            
+        log_color = self.log_colors[record.levelno]
+
+        # Apply color to the log message
+        message = super().format(record)
+        colored_message = f"{log_color}{message}{colors.RESET}"
+        return colored_message
 
 class LogHandler :
    'Common Logger wrapper implementtion'
@@ -63,15 +115,11 @@ class LogHandler :
    def setup(self):
       # custom levels
 
-      logging.TRACE = 5  # trace 
-      logging.addLevelName(logging.TRACE, 'TRACE') 
-      logging.ENTER = 6  # trace - enter function
-      logging.addLevelName(logging.ENTER, 'ENTER') 
-      logging.STATUS = 32  # status 
-      logging.addLevelName(logging.STATUS, 'STATUS') 
       #logging.AUDIT = 33  # audit log 
+      logging.addLevelName(logging.TRACE, 'TRACE') 
+      logging.addLevelName(logging.ENTER, 'ENTER') 
+      logging.addLevelName(logging.STATUS, 'STATUS') 
       #logging.addLevelName(logging.STATUS, 'AUDIT') 
-      logging.NOTICE = 34  # positive yet important 
       logging.addLevelName(logging.NOTICE, 'NOTICE')
       logging.addLevelName(logging.CRITICAL, 'FATAL') # rename existing
 
@@ -92,7 +140,9 @@ class LogHandler :
 
       formatter = logging.Formatter('%(asctime)s : %(name)s [%(levelname)s] %(message)s')
 
-      stream_formatter = logging.Formatter('[%(levelname)s] %(message)s')
+      #stream_formatter = logging.Formatter('%(levelname)s: %(message)s')
+      stream_formatter_color = ColoredFormatter(fmt='%(asctime)s %(levelname)s: %(message)s')
+
 
       #stream_formatter = logging.Formatter('%(message)s')
 
@@ -121,7 +171,7 @@ class LogHandler :
          #print ("** Setting stream log level to INFO ***")
          ch1.setLevel(logging.INFO)
          #self.m_logger.setLevel(logging.INFO)
-      ch1.setFormatter(stream_formatter)
+      ch1.setFormatter(stream_formatter_color)
       self.m_logger.addHandler(ch1)
       self.m_logger.addHandler(ch2)
 
