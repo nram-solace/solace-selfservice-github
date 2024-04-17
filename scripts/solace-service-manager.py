@@ -38,10 +38,10 @@ ver = 'v2.2'
 MIN_PYTHON_VERSION = (3, 6)
 
 class CustomEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def iterencode(self, obj, _one_shot=False):
         if isinstance(obj, dict):
-            return {k: v if k != "sempPassword" else "*****" for k, v in obj.items()}
-        return json.JSONEncoder.default(self, obj)
+            obj = {k: v if k != "sempPassword" else "*****" for k, v in obj.items()}
+        return super().iterencode(obj, _one_shot)
 
 def main(argv):
     """ program entry drop point """
@@ -109,11 +109,14 @@ def main(argv):
     inv = Inventory.Inventory(cfg, r.verbose)
     inv_data = inv.read_inventory_dir(system_cfg['invDir'])
     
-    log.info('Starting {}-{}'.format(me, ver))
+    log.info ('Starting {}-{}'.format(me, ver))
     log.info ('SYSTEM CONFIG : {}'.format(json.dumps(system_config_all, indent=2)))
     log.info ('USER INPUT    : {}'.format(json.dumps(input_data_all, indent=2)))
+    log.info ('INVENTORY     : {} hosts'.format(len(inv_data)))
+
     #leaks password
-    #log.info ('INVENTORY     : {}'.format(json.dumps(inv_data, cls=CustomEncoder,indent=2)))            
+    for k in inv_data:
+        log.info ('{}     : {}'.format(k, json.dumps(inv_data[k], cls=CustomEncoder,indent=2)))            
     
     app_id = input_data_all['params']['application-id']
     if app_id not in inv_data:
