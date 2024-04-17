@@ -151,24 +151,27 @@ class Queues():
         n = 0
         for q_data in input_data_list:
             n += 1
-            queue = q_data['queueName']
+            queue_name = q_data['queueName']
             semp_data=cfg['defaults']['queue'].copy()
             # add required missing params
-            semp_data['queueName'] = queue
+            semp_data['queueName'] = queue_name
             semp_data['msgVpnName'] = msg_vpn_name
-            log.info ('Processing queue: {}'.format(queue))
+            log.info ('Processing queue: {}'.format(queue_name))
 
             ###################################################
-            # post to router - create queue
+            # post to router - delete queue
             #
             print ('\n')
-            log.notice (f"Deleting queue {n}/{num_queues}: {queue}")
-            queue_safe = quote(queue, safe='')
+            log.notice (f"Deleting queue {n}/{num_queues}: {queue_name}")
+            queue_safe = quote(queue_name, safe='')
             resp = semp_h.http_delete (f"{semp_queue_config_url}/{queue_safe}")
             if resp != 'OK':
-                log.warning (f'Delete Queue {queue} failed {resp}')
+                log.warning (f'Delete Queue {queue_name} failed {resp}')
             else:
-                log.status (f'Queue {queue} deleted')
+                log.status (f'Queue {queue_name} deleted')
+            jndi_name = f'Q_{queue_name}'
+            self.delete_jndi_queue (jndi_name)
+        
     
     #--------------------------------------------------------------------
     # add_topic_subscriptions
@@ -224,11 +227,31 @@ class Queues():
         #queue_safe = quote(queue_name, safe='')
         print ('\n')
         log.notice  (f"Adding JNDI queue mapping: {jndi_name} - {queue_name}")
-        semp_queue_sub_config_url = f"{semp_config_url}/{msg_vpn_name}/jndiQueues"
-        resp = semp_h.http_post (semp_queue_sub_config_url, data)
+        semp_jndi_queue_config_url = f"{semp_config_url}/{msg_vpn_name}/jndiQueues"
+        resp = semp_h.http_post (semp_jndi_queue_config_url, data)
         if resp == 'OK':
             log.status (f'JNDI for Queue {queue_name} created') 
         elif resp == 'ALREADY_EXISTS':
             log.warning (f'JNDI for Queue {queue_name} exists.')
         else:
-            log.error (f'JNDI for Queue {queue_name} failed: {resp}')        
+            log.error (f'JNDI for Queue {queue_name} failed: {resp}') 
+            
+    def delete_jndi_queue (self, jndi_name):
+        log.info  (f'Deleting JNDI queue mapping {jndi_name} to queue {jndi_name}')
+        semp_h = self.semp_h
+        cfg = self.cfg
+        sys_cfg = cfg['system']
+        msg_vpn_name = cfg['router']['vpn']
+        semp_config_url = '{}/{}/msgVpns'.format(cfg['router']['sempUrl'], sys_cfg['semp']['configUrl'])
+        semp_queue_config_url = f"{semp_config_url}/{msg_vpn_name}/queues"
+
+        # Escape special characters in topic
+        queue_safe = quote(jndi_name, safe='')
+        print ('\n')
+        log.notice  (f"Deleting JNDI queue mapping: {jndi_name}")
+        semp_jndi_queue = f"{semp_config_url}/{msg_vpn_name}/jndiQueues"
+        resp = semp_h.http_delete (f"{semp_jndi_queue}/{queue_safe}")
+        if resp != 'OK':
+            log.warning (f'Delete JNDI Queue {jndi_name} failed {resp}')
+        else:
+            log.status (f'JNDI Queue {jndi_name} deleted')
