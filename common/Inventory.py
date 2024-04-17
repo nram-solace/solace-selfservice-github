@@ -56,15 +56,16 @@ class Inventory:
                         inv[name]['environment'] = inv_file_data['inventory']['environment']
                         if 'sempPassword' not in host_data:
                             # ignore case in host name
-                            pass_env_var = 'SEMP_PASSWORD_{}_{}'.format(host_data['host'].lower(), host_data['sempUser'].lower())
-                            pass_env_var = pass_env_var.replace('.', '_').replace('-', '_')
+                            semp_pass_env_var = 'SEMP_PASSWORD_{}_{}'.format(host_data['host'].upper(), host_data['sempUser'].upper())
+                            semp_pass_env_var = semp_pass_env_var.replace('.', '_').replace('-', '_')
+                            inv[name]['SEMP_PASSWORD_ENV_VAR'] = semp_pass_env_var
 
                             # check if password is in the environment
-                            if os.environ.get(pass_env_var) is None:
-                                log.warning ('SEMP_PASSWORD environment variable ({}) not set for {}'.format(pass_env_var, name))
+                            if os.environ.get(semp_pass_env_var) is None:
+                                log.warning ('SEMP_PASSWORD environment variable ({}) not set for {}'.format(semp_pass_env_var, name))
                             else:
                                 log.info ('Found password for {} in environment'.format(name))
-                                inv[name]['sempPassword'] = os.environ.get(pass_env_var)
+                                inv[name]['sempPassword'] = os.environ.get(semp_pass_env_var)
                                 
                     
         self.inv = inv
