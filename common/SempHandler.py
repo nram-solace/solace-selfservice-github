@@ -113,7 +113,7 @@ class SempHandler:
             log.debug (' http_post returned {}'. format(json_resp['meta']['responseCode']))
             return "OK"          
         else:
-            log.warning  ("http_post returned {} ({})".format(json_resp['meta']['responseCode'],
+            log.info  ("http_post returned {} ({})".format(json_resp['meta']['responseCode'],
                                             json_resp['meta']['error']['status']))
             log.debug (json_resp['meta']['error']['description'])
             return json_resp['meta']['error']['status']

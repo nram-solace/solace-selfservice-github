@@ -38,6 +38,8 @@ class ClientUserConfig():
         sys_cfg = cfg['system']
         msg_vpn_name = cfg['router']['vpn']
         
+        print ('\n')
+        log.notice ('Creating Client Usernames')
         log.info ('Creating Client Usernames in VPN: {} on router: {}'.format(msg_vpn_name, cfg['router']['sempUrl']))
         semp_config_url = '{}/{}/msgVpns'.format(cfg['router']['sempUrl'], sys_cfg['semp']['configUrl'])
         my_semp_config_url = f"{semp_config_url}/{msg_vpn_name}/clientUsernames"
@@ -135,7 +137,7 @@ class ClientUserConfig():
     # Create ACL Profiles with http post. This does NOT patch existing queues
     #--------------------------------------------------------------------
     def create_acl_profiles (self, input_data_list):
-        
+        print ('\n')
         log.notice ('Creating ACL Profiles')
         semp_h = self.semp_h
         cfg = self.cfg
@@ -238,7 +240,7 @@ class ClientUserConfig():
     # Create Client Profiles with http post. This does NOT patch existing queues
     #--------------------------------------------------------------------
     def create_client_profiles (self, input_data_list):
-            
+            print ('\n')
             log.notice ('Creating Client Profiles')
             semp_h = self.semp_h
             cfg = self.cfg
