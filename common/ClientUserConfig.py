@@ -199,6 +199,7 @@ class ClientUserConfig():
                 self.add_subscribe_topic_exceptions (entry_name, input_data['subscribeTopicExceptions'])
     
     def add_client_connect_exceptions (self, acl_profile_name, exp_list):
+        print ('\n')
         log.info ('Adding Client Connect exceptions to ACL Profile: {}'.format(acl_profile_name))
         semp_h = self.semp_h
         cfg = self.cfg
@@ -211,7 +212,8 @@ class ClientUserConfig():
         i = 0
         for exp in exp_list:
             i += 1
-            log.info ('Adding client connect exception {}/{}: {} to {}'.format(i, n, exp, acl_profile_name))
+            print ('\n')
+            log.notice ('Adding client connect exception {}/{}: {} in {}'.format(i, n, exp, acl_profile_name))
             semp_data = {}
             semp_data['clientConnectExceptionAddress'] = exp
             semp_data['aclProfileName'] = acl_profile_name
@@ -226,6 +228,7 @@ class ClientUserConfig():
                 return False
    
     def add_publish_topic_exceptions (self, acl_profile_name, exp_list):
+        print ('\n')
         log.info ('Adding Publish Topic exceptions to ACL Profile: {}'.format(acl_profile_name))
         semp_h = self.semp_h
         cfg = self.cfg
@@ -238,7 +241,8 @@ class ClientUserConfig():
         i = 0
         for exp in exp_list:
             i += 1
-            log.info ('Adding publish topic exception {}/{}: {} to {}'.format(i, n, exp, acl_profile_name))
+            print ('\n')
+            log.notice ('Adding publish topic exception {}/{}: {} in {}'.format(i, n, exp, acl_profile_name))
             semp_data = {}
             semp_data['publishTopicException'] = exp
             semp_data['publishTopicExceptionSyntax'] = 'smf'
@@ -254,6 +258,7 @@ class ClientUserConfig():
                 return False
             
     def add_subscribe_topic_exceptions (self, acl_profile_name, exp_list):
+        print ('\n')
         log.info ('Adding Subscribe Topic exceptions to ACL Profile: {}'.format(acl_profile_name))
         semp_h = self.semp_h
         cfg = self.cfg
@@ -266,7 +271,8 @@ class ClientUserConfig():
         i = 0
         for exp in exp_list:
             i += 1
-            log.info ('Adding subscribe topic exception {}/{}: {} to {}'.format(i, n, exp, acl_profile_name))
+            print ('\n')
+            log.notice ('Adding subscribe topic exception {}/{}: {} in {}'.format(i, n, exp, acl_profile_name))
             semp_data = {}
             semp_data['subscribeTopicException'] = exp
             semp_data['subscribeTopicExceptionSyntax'] = 'smf'
