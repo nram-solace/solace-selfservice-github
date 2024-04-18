@@ -121,7 +121,7 @@ def main(argv):
     for k in inv_data:
         log.info ('{}     : {}'.format(k, json.dumps(inv_data[k], cls=CustomEncoder,indent=2)))            
     
-    app_id = input_data_all['params']['application-id']
+    app_id = input_data_all['params']['tla-name']
     if app_id not in inv_data:
         log.error ('Application ID: {} not found in inventory'.format(app_id))
         # print list of keys in the inventory
@@ -155,7 +155,11 @@ def main(argv):
         for entry in run_params['create']:
             print ('\n')
             log.notice ('Processing create {}'.format(entry))
+            if entry == 'dmqueues':
+                queue_h.create_queues (input_data['dmqueues'], dmqueue = True)
             if entry == 'queues':
+                # create DMQs first
+                queue_h.create_queues (input_data['dmqueues'], dmqueue = True)
                 queue_h.create_queues (input_data['queues'])
             if entry == 'subscriptions':
                 queue_h.create_queue_subscriptions (input_data['queues'])
@@ -164,7 +168,7 @@ def main(argv):
             if entry == 'acl-profiles':
                 cluser_h.create_acl_profiles (input_data['acl-profiles'])
             if entry == 'client-usernames':
-                # auto create client profiles and acl profiles for client-usernames
+                #  create client profiles and acl profiles ahead of client-usernames
                 cluser_h.create_client_profiles (input_data['client-profiles'])
                 cluser_h.create_acl_profiles (input_data['acl-profiles'])
                 cluser_h.create_client_usernames (input_data['client-usernames'])
@@ -172,6 +176,8 @@ def main(argv):
         for entry in run_params['delete']:
             print ('\n')
             log.notice ('Processing delete {}'.format(entry))
+            if entry == 'dmqueues':
+                queue_h.delete_queues (input_data['dmqueues'])
             if entry == 'queues':
                 queue_h.delete_queues (input_data['queues'])
             if entry == 'subscriptions':
