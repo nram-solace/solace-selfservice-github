@@ -16,7 +16,7 @@
 # Ramesh Natarajan (nram), Solace PSG (ramesh.natarajan@solace.com)
 ########################################################################
 me = "solace-service-manager"
-ver = 'v2.2.3 (2024-04-17)'
+ver = 'v2.2.4 (2024-04-18)'
 
 import sys, os
 import argparse
