@@ -164,11 +164,15 @@ class ClientUserConfig():
             n += 1
             entry_name = input_data['aclProfileName']
             semp_data=cfg['defaults']['acl-profile'].copy()
+
             # add required missing params
             semp_data['aclProfileName'] = entry_name
             semp_data['msgVpnName'] = msg_vpn_name
             # copy the rest of the params from the input data
             for k in input_data:
+                # drop the clientConnectExceptions, pubsubExceptions, and topicExceptions
+                if k in ['clientConnectExceptions', 'publishTopicExceptions', 'subscribeTopicExceptions']:
+                    continue
                 semp_data[k] = input_data[k]
             log.info ('Processing ACL Profile: {}'.format(entry_name))
 
@@ -184,7 +188,99 @@ class ClientUserConfig():
                 log.warning (f'ACL Profile {entry_name} exists.')
             else:
                 log.error (f'ACL Profile {entry_name} create failed with {resp}')
-                
+                return False
+            
+            # process exceptions
+            if 'clientConnectExceptions' in input_data:
+                self.add_client_connect_exceptions (entry_name, input_data['clientConnectExceptions'])
+            if 'publishTopicExceptions' in input_data:
+                self.add_publish_topic_exceptions (entry_name, input_data['publishTopicExceptions'])
+            if 'subscribeTopicExceptions' in input_data:
+                self.add_subscribe_topic_exceptions (entry_name, input_data['subscribeTopicExceptions'])
+    
+    def add_client_connect_exceptions (self, acl_profile_name, exp_list):
+        log.info ('Adding Client Connect exceptions to ACL Profile: {}'.format(acl_profile_name))
+        semp_h = self.semp_h
+        cfg = self.cfg
+        sys_cfg = cfg['system']
+        msg_vpn_name = cfg['router']['vpn']
+        semp_config_url = '{}/{}/msgVpns'.format(cfg['router']['sempUrl'], sys_cfg['semp']['configUrl'])
+        my_semp_config_url = f"{semp_config_url}/{msg_vpn_name}/aclProfiles"
+        n = len(exp_list)
+        log.notice ('Adding {} client connect exceptions to ACL Profile: {}'.format(n, acl_profile_name))
+        i = 0
+        for exp in exp_list:
+            i += 1
+            log.info ('Adding client connect exception {}/{}: {} to {}'.format(i, n, exp, acl_profile_name))
+            semp_data = {}
+            semp_data['clientConnectExceptionAddress'] = exp
+            semp_data['aclProfileName'] = acl_profile_name
+            semp_data['msgVpnName'] = msg_vpn_name
+            resp = semp_h.http_post (f'{my_semp_config_url}/{acl_profile_name}/clientConnectExceptions', semp_data)
+            if resp == 'OK':
+                log.status (f'Exception {exp} created')
+            elif resp == 'ALREADY_EXISTS':
+                log.warning (f'Exception {exp} exists.')
+            else:
+                log.error (f'Exception {exp} create failed with {resp}')
+                return False
+   
+    def add_publish_topic_exceptions (self, acl_profile_name, exp_list):
+        log.info ('Adding Publish Topic exceptions to ACL Profile: {}'.format(acl_profile_name))
+        semp_h = self.semp_h
+        cfg = self.cfg
+        sys_cfg = cfg['system']
+        msg_vpn_name = cfg['router']['vpn']
+        semp_config_url = '{}/{}/msgVpns'.format(cfg['router']['sempUrl'], sys_cfg['semp']['configUrl'])
+        my_semp_config_url = f"{semp_config_url}/{msg_vpn_name}/aclProfiles"
+        n = len(exp_list)
+        log.notice ('Adding {} publish topic exceptions to ACL Profile: {}'.format(n, acl_profile_name))
+        i = 0
+        for exp in exp_list:
+            i += 1
+            log.info ('Adding publish topic exception {}/{}: {} to {}'.format(i, n, exp, acl_profile_name))
+            semp_data = {}
+            semp_data['publishTopicException'] = exp
+            semp_data['publishTopicExceptionSyntax'] = 'smf'
+            semp_data['aclProfileName'] = acl_profile_name
+            semp_data['msgVpnName'] = msg_vpn_name
+            resp = semp_h.http_post (f'{my_semp_config_url}/{acl_profile_name}/publishTopicExceptions', semp_data)
+            if resp == 'OK':
+                log.status (f'Publish topic Exception {exp} created')
+            elif resp == 'ALREADY_EXISTS':
+                log.warning (f'Publish topic Exception {exp} exists.')
+            else:
+                log.error (f'Publish topic Exception {exp} create failed with {resp}')
+                return False
+            
+    def add_subscribe_topic_exceptions (self, acl_profile_name, exp_list):
+        log.info ('Adding Subscribe Topic exceptions to ACL Profile: {}'.format(acl_profile_name))
+        semp_h = self.semp_h
+        cfg = self.cfg
+        sys_cfg = cfg['system']
+        msg_vpn_name = cfg['router']['vpn']
+        semp_config_url = '{}/{}/msgVpns'.format(cfg['router']['sempUrl'], sys_cfg['semp']['configUrl'])
+        my_semp_config_url = f"{semp_config_url}/{msg_vpn_name}/aclProfiles"
+        n = len(exp_list)
+        log.notice ('Adding {} subscribe topic exceptions to ACL Profile: {}'.format(n, acl_profile_name))
+        i = 0
+        for exp in exp_list:
+            i += 1
+            log.info ('Adding subscribe topic exception {}/{}: {} to {}'.format(i, n, exp, acl_profile_name))
+            semp_data = {}
+            semp_data['subscribeTopicException'] = exp
+            semp_data['subscribeTopicExceptionSyntax'] = 'smf'
+            semp_data['aclProfileName'] = acl_profile_name
+            semp_data['msgVpnName'] = msg_vpn_name
+            resp = semp_h.http_post (f'{my_semp_config_url}/{acl_profile_name}/subscribeTopicExceptions', semp_data)
+            if resp == 'OK':
+                log.status (f'Subscribe topic Exception {exp} created')
+            elif resp == 'ALREADY_EXISTS':
+                log.warning (f'Subscribe topic Exception {exp} exists.')
+            else:
+                log.error (f'Subscribe topic Exception {exp} create failed with {resp}')
+                return False  
+        
     #--------------------------------------------------------------------
     # delete_acl_profiles
     # Delete ACL Profiles with http delete. This does NOT patch existing queues
