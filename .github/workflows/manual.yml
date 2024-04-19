@@ -25,7 +25,8 @@ jobs:
       - name: Install dependencies
         run: pip install datetime logging requests pathlib pyyaml 
 
-      - name: Run solace-service-manager.py ($INPUT_FILE)
+
+      - name: Run solace-service-manager.py (${{ vars.INPUT_FILE }}) ...
         run: |
           # required for NT
           #export http_proxy=$HTTP_PROXY
