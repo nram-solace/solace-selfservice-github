@@ -16,7 +16,7 @@
 # Ramesh Natarajan (nram), Solace PSG (ramesh.natarajan@solace.com)
 ########################################################################
 me = "solace-service-manager"
-ver = 'v2.2.6 (2024-04-19)'
+ver = 'v2.2.7 (2024-04-19)'
 
 import sys, os
 import argparse
@@ -128,7 +128,7 @@ def main(argv):
         log.info ('Inventory keys: {}'.format(str(inv_data.keys())))
         sys.exit(1)
     router = inv_data[app_id]
-    log.notice (f'Got the router config for {app_id}\n\tURL     : {router["sempUrl"]}\n\tUSER    : {router["sempUser"]}\n\tVPN     : {router["vpn"]}\n\tPASSWORD: read from env' )
+    log.notice (f'Got the router config for {app_id}\n\tURL     : {router["sempUrl"]}\n\tUSER    : {router["sempUser"]}\n\tVPN     : {router["vpn"]}\n\tPASSWORD: read from env: $SEMP_PASSWORD' )
 
 
     cfg['router'] = router
