@@ -18,7 +18,7 @@ params:
   # this name should be in one of the inventory file under inventory/ folder
   tla-name: nram-test
   # verbose mode
-  verbose: false
+  verbose: true
   create:
     #- dmqueues
     # queues will auto create dmqueues
@@ -52,10 +52,16 @@ inputs:
       deadMsgQueue: DMQ.Test01
     - queueName: Git.Test02
       subscriptions:
+<<<<<<< HEAD:input/sample-all.yaml
         - test/topic/1
         - test/topic/*
     - queueName: Git/Test03
     - queueName: GitTest04
+=======
+        - test/nram/dev/1
+        - test/nram/dev/xyz/>
+    - queueName: nram.dev.q2
+>>>>>>> d12b86a59004231b91a67aefd575adb93574a2fd:input/nram-dev.yaml
 
   # --------------------------------------------------------------
   # Client Usernames
