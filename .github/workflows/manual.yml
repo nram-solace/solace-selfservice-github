@@ -31,8 +31,8 @@ jobs:
           #export http_proxy=$HTTP_PROXY
           #export https_proxy=$HTTPS_PROXY
           #echo "http_proxy set to $http_proxy"
-          echo "Input file : $INPUT_FILE (${{ env.INPUT_FILE }})"
-          python scripts/solace-service-manager.py --input ${{ env.INPUT_FILE }}
+          echo "Input file : $INPUT_FILE (${{ vars.INPUT_FILE }})"
+          python scripts/solace-service-manager.py --input ${{ vars.INPUT_FILE }}
         env:
           SEMP_USER: ${{ vars.SEMP_USER }}
           SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
