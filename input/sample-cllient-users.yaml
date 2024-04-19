@@ -1,14 +1,8 @@
 ---
 # ##############################################################
-# User input file. This is the only file user needs to change.
-# Copy this file as input/default.yaml and change the values
-# On commit, Github action will trigger the workflow to run
-# 
-# IMPORTANT: 
-# DO NOT change the structure of this file
-# DO NOT add properties that are not in the sample
-# DO NOT CHECK IN THIS FILE OR ANY CODE IN THE MAIN BRANCH
-# This file MUST be checked in the feature branch for the TLA
+# Sample input file for provisioning list of client users with
+# ACL and Client Profiles using Solace self provision tool 
+# copy this file as input/<your-branch-name>.yaml and update the values
 # ##############################################################
 
 # --------------------------------------------------------------
@@ -16,80 +10,60 @@
 # --------------------------------------------------------------
 params:
   # this name should be in one of the inventory file under inventory/ folder
-  tla-name: nram-local-test
+  tla-name: nram-local
   # verbose mode
   verbose: false
   create:
-    #- dmqueues
-    # queues will auto create dmqueues
-    - queues
     # client username will auto create client-profiles, acl-profiles
     - client-usernames
-    #- client-profiles
-    #- acl-profiles
   # update is not supported yet
-  update: null
+  #update: null
 
 # --------------------------------------------------------------
 # User inputs
 # --------------------------------------------------------------
 inputs:
-  # --------------------------------------------------------------
-  # Queues
-  #
-  # list of DMQs
-  # donnot override properties unless required
-  dmqueues:
-    - queueName: "#DEAD_MSG_QUEUE"
-    - queueName: DMQ.Test01
-  # list of queues
-  # individual queues can override the properties here
-  # subscriptions: can be added optionally
-  queues:
-    - queueName: Git.Test01
-      accessType: exclusive
-      maxMsgSpoolUsage: 1234
-      deadMsgQueue: DMQ.Test01
-    - queueName: Git.Test02
-      subscriptions:
-        - test/topic/1
-        - test/topic/*
-    - queueName: Git/Test03
-    - queueName: GitTest04
-
+  
   # --------------------------------------------------------------
   # Client Usernames
   #
   client-usernames:
-    - clientUsername: git-test41
-      aclProfileName: git-test41-acl
-      clientProfileName: git-test41-profile
-    - clientUsername: git-test42
-      aclProfileName: git-test42-acl
-      clientProfileName: git-test42-profile
-    - clientUsername: git-test43
-    - clientUsername: git-test44
+    - clientUsername: test-user1
+      aclProfileName: test-user1-acl
+      clientProfileName: test-user1-profile
+    - clientUsername: test-user2
+      aclProfileName: test-user2-acl
+      clientProfileName: test-user2-profile
+    # the following will use the default acl and client profiles
+    - clientUsername: test-user3
+    - clientUsername: test-user4
   # --------------------------------------------------------------
   # Client Profiles
   #
   client-profiles:
-    - clientProfileName: git-test41-profile
+      # all client profiles used above in client-username: should be defined here
+    - clientProfileName: test-user1-profile
+      # the following will override the defaults
       allowBridgeConnectionsEnabled: true
       allowGuaranteedEndpointCreateEnabled: true
       allowGuaranteedMsgReceiveEnabled: true
       allowGuaranteedMsgSendEnabled: true
       allowSharedSubscriptionsEnabled: true
       allowTransactedSessionsEnabled: true
-    - clientProfileName: git-test42-profile
-      allowGuaranteedMsgReceiveEnabled: true
-      allowGuaranteedMsgSendEnabled: true
-    - clientProfileName: git-test3-profile
+      # the following will use the defaults
+    - clientProfileName: test-user2-profile
+      # this is not used in client-usernames:, but you can create additional profiles
+    - clientProfileName: test-test3-profile
   # --------------------------------------------------------------
   # ACL Profiles
   # Exceptions are optional and can be added to the profile
   acl-profiles:
-    - aclProfileName: git-test41-acl
-      clientConnectDefaultAction: disallow
+    - aclProfileName: test-user1-acl
+      # the following will override the defaults
+      publishTopicDefaultAction: allow
+      subscribeTopicDefaultAction: allow
+      # list of exceptions can be added
+      # make sure they are valid CIDRs or topics
       clientConnectExceptions:
         - 10.10.0.0/24
         - 10.20.0.0/24
@@ -99,10 +73,11 @@ inputs:
       subscribeTopicExceptions:
         - test/topic/sub/3
         - test/topic/sub/4
-    - aclProfileName: git-test42-acl
-      publishTopicDefaultAction: disallow
-    - aclProfileName: git-test43-acl
-    - aclProfileName: git-test44-acl
+      # following will use defaults
+    - aclProfileName: test-user2-acl
+    # following not used in the client-username
+    # but you can create additional profiles here
+    - aclProfileName: test-test3-acl
 
 # --------------------------------------------------------------
 # Defaults for all inputs
@@ -111,22 +86,6 @@ inputs:
 # any property not in the defaults below or the override above will use Solace defaults
 # --------------------------------------------------------------
 defaults:
-  queue:
-    accessType: non-exclusive
-    deadMsgQueue: "#DEAD_MSG_QUEUE"
-    maxBindCount: 10
-    maxDeliveredUnackedMsgsPerFlow: 1000
-    maxMsgSize: 1000000
-    maxMsgSpoolUsage: 1000
-    maxRedeliveryCount: 2
-    maxTtl: 0
-    owner: solace-cloud-client
-    permission: no-access
-    redeliveryEnabled: true
-    respectTtlEnabled: true
-  dmqueue:
-    accessType: exclusive
-    maxMsgSpoolUsage: 999
   client-user:
     clientProfileName: default
     aclProfileName: default
@@ -142,8 +101,8 @@ defaults:
     maxIngressFlowCount: 100
   acl-profile:
     clientConnectDefaultAction: disallow
-    publishTopicDefaultAction: allow
-    subscribeTopicDefaultAction: allow
+    publishTopicDefaultAction: disallow
+    subscribeTopicDefaultAction: disallow
 
 # --------------------------------------------------------------
 # System configuration

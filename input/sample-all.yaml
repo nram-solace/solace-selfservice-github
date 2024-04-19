@@ -1,6 +1,14 @@
 ---
 # ##############################################################
-# nram-dev.yaml
+# User input file. This is the only file user needs to change.
+# Copy this file as input/default.yaml and change the values
+# On commit, Github action will trigger the workflow to run
+#  
+# IMPORTANT: 
+# DO NOT change the structure of this file
+# DO NOT add properties that are not in the sample
+# DO NOT CHECK IN THIS FILE OR ANY CODE IN THE MAIN BRANCH
+# This file MUST be checked in the feature branch for the TLA
 # ##############################################################
 
 # --------------------------------------------------------------
@@ -8,7 +16,7 @@
 # --------------------------------------------------------------
 params:
   # this name should be in one of the inventory file under inventory/ folder
-  tla-name: nram-dev
+  tla-name: nram-test
   # verbose mode
   verbose: true
   create:
@@ -16,7 +24,7 @@ params:
     # queues will auto create dmqueues
     - queues
     # client username will auto create client-profiles, acl-profiles
-    #- client-usernames
+    - client-usernames
     #- client-profiles
     #- acl-profiles
   # update is not supported yet
@@ -33,23 +41,80 @@ inputs:
   # donnot override properties unless required
   dmqueues:
     - queueName: "#DEAD_MSG_QUEUE"
-    - queueName: DMQ.nram.dev
+    - queueName: DMQ.Test01
   # list of queues
   # individual queues can override the properties here
   # subscriptions: can be added optionally
   queues:
-    - queueName: nram.dev.q1
+    - queueName: Git.Test01
       accessType: exclusive
       maxMsgSpoolUsage: 1234
       deadMsgQueue: DMQ.Test01
+    - queueName: Git.Test02
       subscriptions:
+<<<<<<< HEAD:input/sample-all.yaml
+        - test/topic/1
+        - test/topic/*
+    - queueName: Git/Test03
+    - queueName: GitTest04
+=======
         - test/nram/dev/1
         - test/nram/dev/xyz/>
     - queueName: nram.dev.q2
+>>>>>>> d12b86a59004231b91a67aefd575adb93574a2fd:input/nram-dev.yaml
 
+  # --------------------------------------------------------------
+  # Client Usernames
+  #
+  client-usernames:
+    - clientUsername: git-test41
+      aclProfileName: git-test41-acl
+      clientProfileName: git-test41-profile
+    - clientUsername: git-test42
+      aclProfileName: git-test42-acl
+      clientProfileName: git-test42-profile
+    - clientUsername: git-test43
+    - clientUsername: git-test44
+  # --------------------------------------------------------------
+  # Client Profiles
+  #
+  client-profiles:
+    - clientProfileName: git-test41-profile
+      allowBridgeConnectionsEnabled: true
+      allowGuaranteedEndpointCreateEnabled: true
+      allowGuaranteedMsgReceiveEnabled: true
+      allowGuaranteedMsgSendEnabled: true
+      allowSharedSubscriptionsEnabled: true
+      allowTransactedSessionsEnabled: true
+    - clientProfileName: git-test42-profile
+      allowGuaranteedMsgReceiveEnabled: true
+      allowGuaranteedMsgSendEnabled: true
+    - clientProfileName: git-test3-profile
+  # --------------------------------------------------------------
+  # ACL Profiles
+  # Exceptions are optional and can be added to the profile
+  acl-profiles:
+    - aclProfileName: git-test41-acl
+      clientConnectDefaultAction: disallow
+      clientConnectExceptions:
+        - 10.10.0.0/24
+        - 10.20.0.0/24
+      publishTopicExceptions:
+        - test/topic/1
+        - test/topic/2
+      subscribeTopicExceptions:
+        - test/topic/sub/3
+        - test/topic/sub/4
+    - aclProfileName: git-test42-acl
+      publishTopicDefaultAction: disallow
+    - aclProfileName: git-test43-acl
+    - aclProfileName: git-test44-acl
 
 # --------------------------------------------------------------
 # Defaults for all inputs
+# The following defaults will be applied to all inputs above
+# any property can also be overridden in the individual input above
+# any property not in the defaults below or the override above will use Solace defaults
 # --------------------------------------------------------------
 defaults:
   queue:
