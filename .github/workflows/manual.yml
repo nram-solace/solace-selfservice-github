@@ -29,9 +29,12 @@ jobs:
         id: extract_branch_name
         run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
+        # INPUT_FILE : input/<branch-name>.yaml (eg: input/nram-dev.yaml)
+        # SEMP_PASSWORD : SEMP_PASSWORD_<branch>.yaml (Eg: SEMP_PASSWORD_NRAM_DEV)
       - name: Set up environment variables
         run: |
-          echo "INPUT_FILE=input/$BRANCH_NAME.yaml" >> $GITHUB_ENV  
+          echo "INPUT_FILE=input/$BRANCH_NAME.yaml" >> $GITHUB_ENV
+          echo "SEMP_PASSWORD=${{ secrets['SEMP_PASSWORD_' + env.BRANCH_NAME ] }}" >> $GITHUB_ENV
 
       - name: Run solace-service-manager.py (${{ env.INPUT_FILE }})...
         run: |
@@ -42,7 +45,8 @@ jobs:
           python scripts/solace-service-manager.py --input $INPUT_FILE
         env:
           SEMP_USER: ${{ vars.SEMP_USER }}
-          SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
+          #SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
+          SEMP_PASSWORD: ${{ env.SEMP_PASSWORD }}
           INPUT_FILE: ${{ env.INPUT_FILE }}
           # NT
           #HTTP_PROXY: "http://199.16.205.1:9443/"
