@@ -16,7 +16,7 @@
 # Ramesh Natarajan (nram), Solace PSG (ramesh.natarajan@solace.com)
 ########################################################################
 me = "solace-service-manager"
-ver = 'v2.2.3 (2024-04-17)'
+ver = 'v2.2.5 (2024-04-18)'
 
 import sys, os
 import argparse
@@ -108,7 +108,7 @@ def main(argv):
     cfg['log_handler'] = log_h
 
     # Read the inventory file
-    print ('Reading inventory from {}'.format(system_cfg['inventoryDir']))
+    print ('Reading inventory from {}/ folder'.format(system_cfg['inventoryDir']))
     inv = Inventory.Inventory(cfg, r.verbose)
     inv_data = inv.read_inventory_dir(system_cfg['inventoryDir'])
     
@@ -121,7 +121,7 @@ def main(argv):
     for k in inv_data:
         log.info ('{}     : {}'.format(k, json.dumps(inv_data[k], cls=CustomEncoder,indent=2)))            
     
-    app_id = input_data_all['params']['application-id']
+    app_id = input_data_all['params']['tla-name']
     if app_id not in inv_data:
         log.error ('Application ID: {} not found in inventory'.format(app_id))
         # print list of keys in the inventory
@@ -155,8 +155,18 @@ def main(argv):
         for entry in run_params['create']:
             print ('\n')
             log.notice ('Processing create {}'.format(entry))
+            if entry not in input_data:
+                log.warning ('No {} entry in input file'.format(entry))
+                continue
+            if entry == 'dmqueues':
+                if 'dmqueues' in input_data:
+                    queue_h.create_queues (input_data['dmqueues'], dmqueue = True)
             if entry == 'queues':
+                # create DMQs first
+                if 'dmqueues' in input_data:
+                    queue_h.create_queues (input_data['dmqueues'], dmqueue = True)
                 queue_h.create_queues (input_data['queues'])
+                
             if entry == 'subscriptions':
                 queue_h.create_queue_subscriptions (input_data['queues'])
             if entry == 'client-profiles':
@@ -164,14 +174,18 @@ def main(argv):
             if entry == 'acl-profiles':
                 cluser_h.create_acl_profiles (input_data['acl-profiles'])
             if entry == 'client-usernames':
-                # auto create client profiles and acl profiles for client-usernames
-                cluser_h.create_client_profiles (input_data['client-profiles'])
-                cluser_h.create_acl_profiles (input_data['acl-profiles'])
+                #  create client profiles and acl profiles ahead of client-usernames
+                if 'client-profiles' in input_data:
+                    cluser_h.create_client_profiles (input_data['client-profiles'])
+                if 'acl-profiles' in input_data:
+                    cluser_h.create_acl_profiles (input_data['acl-profiles'])
                 cluser_h.create_client_usernames (input_data['client-usernames'])
     if 'delete' in run_params and run_params['delete'] is not None:
         for entry in run_params['delete']:
             print ('\n')
             log.notice ('Processing delete {}'.format(entry))
+            if entry == 'dmqueues':
+                queue_h.delete_queues (input_data['dmqueues'])
             if entry == 'queues':
                 queue_h.delete_queues (input_data['queues'])
             if entry == 'subscriptions':
