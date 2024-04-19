@@ -4,3 +4,4 @@ common/__pycache__/**
 input/nram/**
 logs/**
 env.sh
+input/default.yaml
