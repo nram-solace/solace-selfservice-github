@@ -108,7 +108,7 @@ def main(argv):
     cfg['log_handler'] = log_h
 
     # Read the inventory file
-    print ('Reading inventory from {}'.format(system_cfg['inventoryDir']))
+    print ('Reading inventory from {}/ folder'.format(system_cfg['inventoryDir']))
     inv = Inventory.Inventory(cfg, r.verbose)
     inv_data = inv.read_inventory_dir(system_cfg['inventoryDir'])
     
@@ -155,12 +155,18 @@ def main(argv):
         for entry in run_params['create']:
             print ('\n')
             log.notice ('Processing create {}'.format(entry))
+            if entry not in input_data:
+                log.warning ('No {} entry in input file'.format(entry))
+                continue
             if entry == 'dmqueues':
-                queue_h.create_queues (input_data['dmqueues'], dmqueue = True)
+                if 'dmqueues' in input_data:
+                    queue_h.create_queues (input_data['dmqueues'], dmqueue = True)
             if entry == 'queues':
                 # create DMQs first
-                queue_h.create_queues (input_data['dmqueues'], dmqueue = True)
+                if 'dmqueues' in input_data:
+                    queue_h.create_queues (input_data['dmqueues'], dmqueue = True)
                 queue_h.create_queues (input_data['queues'])
+                
             if entry == 'subscriptions':
                 queue_h.create_queue_subscriptions (input_data['queues'])
             if entry == 'client-profiles':
@@ -169,8 +175,10 @@ def main(argv):
                 cluser_h.create_acl_profiles (input_data['acl-profiles'])
             if entry == 'client-usernames':
                 #  create client profiles and acl profiles ahead of client-usernames
-                cluser_h.create_client_profiles (input_data['client-profiles'])
-                cluser_h.create_acl_profiles (input_data['acl-profiles'])
+                if 'client-profiles' in input_data:
+                    cluser_h.create_client_profiles (input_data['client-profiles'])
+                if 'acl-profiles' in input_data:
+                    cluser_h.create_acl_profiles (input_data['acl-profiles'])
                 cluser_h.create_client_usernames (input_data['client-usernames'])
     if 'delete' in run_params and run_params['delete'] is not None:
         for entry in run_params['delete']:
