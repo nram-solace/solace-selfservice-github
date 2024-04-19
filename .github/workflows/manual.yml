@@ -25,13 +25,14 @@ jobs:
       - name: Install dependencies
         run: pip install datetime logging requests pathlib pyyaml 
 
-      - name: Run solace-service-manager.py ... (input/default.yml)
+      - name: Run solace-service-manager.py
         run: |
           # required for NT
           #export http_proxy=$HTTP_PROXY
           #export https_proxy=$HTTPS_PROXY
           #echo "http_proxy set to $http_proxy"
-          python scripts/solace-service-manager.py --input $INPUT_FILE
+          echo "Input file : $INPUT_FILE (${{ env.INPUT_FILE }})"
+          python scripts/solace-service-manager.py --input ${{ env.INPUT_FILE }}
         env:
           SEMP_USER: ${{ env.SEMP_USER }}
           SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
