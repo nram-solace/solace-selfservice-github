@@ -25,18 +25,18 @@ jobs:
       - name: Install dependencies
         run: pip install datetime logging requests pathlib pyyaml 
 
-      - name: Run solace-service-manager.py ... (input/default.yml)
+      - name: Run solace-service-manager.py
         run: |
           # required for NT
           #export http_proxy=$HTTP_PROXY
           #export https_proxy=$HTTPS_PROXY
           #echo "http_proxy set to $http_proxy"
-          python scripts/solace-service-manager.py --input input/default.yaml
+          echo "Input file : $INPUT_FILE (${{ env.INPUT_FILE }})"
+          python scripts/solace-service-manager.py --input $INPUT_FILE
         env:
+          SEMP_USER: ${{ env.SEMP_USER }}
           SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
-          SEMP_PASSWORD_NRAM_CLOUD_DEV1_NRAM_DEV1_ADMIN: $(( secrets.SEMP_PASSWORD_NRAM_CLOUD_DEV1_NRAM_DEV1_ADMIN }}
-          SEMP_PASSWORD_NRAM_CLOUD_TEST1_NRAM_TEST_ADMIN: ${{ secrets.SEMP_PASSWORD_NRAM_CLOUD_TEST1_NRAM_TEST_ADMIN }}
-          
-          # required for NT
+          INPUT_FILE: ${{ env.INPUT_FILE }}          
+          # NT
           #HTTP_PROXY: "http://199.16.205.1:9443/"
           #HTTPS_PROXY: "https://199.16.205.1:9443/"
