@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "INPUT_FILE=input/$BRANCH_NAME.yaml" >> $GITHUB_ENV  
 
-      - name: Run solace-service-manager.py ($INPUT_FILE) [${{ env.INPUT_FILE }}]...
+      - name: Run solace-service-manager.py (${{ env.INPUT_FILE }})...
         run: |
           # required for NT
           #export http_proxy=$HTTP_PROXY
