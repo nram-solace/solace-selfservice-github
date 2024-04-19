@@ -45,7 +45,7 @@ inputs:
       subscriptions:
         - test/nram/dev/1
         - test/nram/dev/xyz/>
-    - queueName: nram.test.q1
+    - queueName: nram.test.q2
 
 
 # --------------------------------------------------------------
