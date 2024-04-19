@@ -73,23 +73,32 @@ class Queues():
     # create_queues
     # Create Queues with http post. This does NOT patch existing queues
     #--------------------------------------------------------------------
-    def create_queues (self, input_data_list, add_subscriptions = False):
+    def create_queues (self, input_data_list, dmqueue = False):
 
         semp_h = self.semp_h
         cfg = self.cfg
         sys_cfg = cfg['system']
         msg_vpn_name = cfg['router']['vpn']
         
-        log.info ('Creating Queues in VPN: {} on router: {}'.format(msg_vpn_name, cfg['router']['sempUrl']))
+        label = 'Queues'
+        if dmqueue:
+            label = 'Dead Message Queues'
+            
+        log.info ('Creating {} in VPN: {} on router: {}'.format(label, msg_vpn_name, cfg['router']['sempUrl']))
         semp_config_url = '{}/{}/msgVpns'.format(cfg['router']['sempUrl'], sys_cfg['semp']['configUrl'])
         semp_queue_config_url = f"{semp_config_url}/{msg_vpn_name}/queues"
         
         num_queues = len(input_data_list)
-        log.notice ('Creating {} Queues on {}'.format(num_queues, msg_vpn_name))
+        log.notice ('Creating {} {} on {}'.format(num_queues, label, msg_vpn_name))
         queue_props = []
-        # get list of tags from Cfg['queue']
-        for k in cfg['defaults']['queue']:
-            queue_props.append(k)
+        #if dmqueue:
+        #    log.info ('Using Dead Message Queue properties')
+        #    default_props = cfg['defaults']['dmqueue']
+        #else: 
+        #    default_props = cfg['defaults']['queue']
+        ## get list of tags from Cfg['queue']
+        #for k in default_props:
+        #    queue_props.append(k)
         # add required tags
         queue_props.append('queueName')
         #queue_props.append('msgVpnName')
@@ -99,9 +108,13 @@ class Queues():
         for input_data in input_data_list:
             n += 1
             entry_name = input_data['queueName']
-            semp_data=cfg['defaults']['queue'].copy()
+            if dmqueue:
+                log.info ('Using DMQ properties')
+                semp_data=cfg['defaults']['dmqueue'].copy()
+            else:
+                semp_data=cfg['defaults']['queue'].copy()
             # add required missing params
-            semp_data['queueName'] = input_data
+            semp_data['queueName'] = entry_name
             semp_data['msgVpnName'] = msg_vpn_name
             for k in input_data:
                 # skip subscriptions
@@ -112,24 +125,28 @@ class Queues():
             semp_data['egressEnabled'] = True
             semp_data['ingressEnabled'] = True
             
-            log.info ('Processing queue: {}'.format(input_data))
+            log.info ('Processing {}: {}'.format(label, entry_name))
             ###################################################
             # post to router - create queue
             #
             print ('\n')
-            log.notice (f"Creating queue {n}/{num_queues}: {entry_name}")
+            log.notice (f"Creating {label} {n}/{num_queues}: {entry_name}")
             resp = semp_h.http_post (semp_queue_config_url, semp_data)
             if resp == 'OK':
-                log.status (f'Queue {entry_name} created')
+                log.status (f'{label} {entry_name} created')
             elif resp == 'ALREADY_EXISTS':
-                log.warning (f'Queue {entry_name} exists.')
+                log.warning (f'{label} {entry_name} exists.')
             else:
-                log.error (f'Queue {entry_name} create failed: {resp}')
-            if add_subscriptions and 'subscriptions' in input_data:
+                log.error (f'{Queue} {entry_name} create failed: {resp}')
+            if dmqueue:
+                log.info ('Queue is a Dead Message Queue. Skipping subscriptions and JNDI mapping')
+                continue
+            if 'subscriptions' in input_data:
                 self.add_topic_subscriptions(entry_name, input_data['subscriptions'])
             jndi_name = f'Q_{entry_name}'
+            # replace "." with _ 
+            jndi_name = jndi_name.replace('.', '_')
             self.add_jndi_queue (entry_name, jndi_name)
-    
     
     #--------------------------------------------------------------------
     # delete queues
@@ -170,6 +187,8 @@ class Queues():
             else:
                 log.status (f'Queue {queue_name} deleted')
             jndi_name = f'Q_{queue_name}'
+            # replace "." with _ 
+            jndi_name = jndi_name.replace('.', '_')
             self.delete_jndi_queue (jndi_name)
         
     
@@ -198,7 +217,7 @@ class Queues():
             # Escape special characters in topic
             queue_safe = quote(queue_name, safe='')
             print ('\n')
-            log.notice  (f"Adding subscription topic {n}/{max_n}: {topic} - {queue_name}")
+            log.notice  (f"Adding subscription topic {n}/{max_n}: {topic} => {queue_name}")
             semp_queue_sub_config_url = f"{semp_config_url}/{msg_vpn_name}/queues/{queue_safe}/subscriptions"
             resp = semp_h.http_post (semp_queue_sub_config_url, data)
             if resp == 'OK':
@@ -226,7 +245,7 @@ class Queues():
         # Escape special characters in topic
         #queue_safe = quote(queue_name, safe='')
         print ('\n')
-        log.notice  (f"Adding JNDI queue mapping: {jndi_name} - {queue_name}")
+        log.notice  (f"Adding JNDI queue mapping: {jndi_name} -> {queue_name}")
         semp_jndi_queue_config_url = f"{semp_config_url}/{msg_vpn_name}/jndiQueues"
         resp = semp_h.http_post (semp_jndi_queue_config_url, data)
         if resp == 'OK':

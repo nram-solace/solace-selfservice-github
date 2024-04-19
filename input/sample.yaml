@@ -1,129 +1,153 @@
 ---
-# Input file for solace config management script
-# this file name (input/default.yaml) is hardcoded
-# this is the only file script will look for.
-# Structure of the file
-# router:
-# run_params:
-# inputs:
-# defaults:
-# run_params:
-# system:
+# ##############################################################
+# User input file. This is the only file user needs to change.
+# Copy this file as input/default.yaml and change the values
+# On commit, Github action will trigger the workflow to run
+# 
+# IMPORTANT: 
+# DO NOT change the structure of this file
+# DO NOT add properties that are not in the sample
+# DO NOT CHECK IN THIS FILE OR ANY CODE IN THE MAIN BRANCH
+# This file MUST be checked in the feature branch for the TLA
+# ##############################################################
 
+# --------------------------------------------------------------
 # Run parameters
+# --------------------------------------------------------------
 params:
-   # application-id should be in oen of the inventory/*.yaml file.
-   application-id: "nram-local-dev"
-   # logging level
-   verbose: false
-   create:
-      - "queues"
-      - "subscriptions"
-      - "acl-profiles"
-      - "client-usernames"
-      - "client-profiles"
-   update:
-      #- "none"
+  # this name should be in one of the inventory file under inventory/ folder
+  tla-name: nram-local-test
+  # verbose mode
+  verbose: false
+  create:
+    #- dmqueues
+    # queues will auto create dmqueues
+    - queues
+    # client username will auto create client-profiles, acl-profiles
+    - client-usernames
+    #- client-profiles
+    #- acl-profiles
+  # update is not supported yet
+  update: null
 
-
-
+# --------------------------------------------------------------
 # User inputs
-# list of object and properties to create / update
+# --------------------------------------------------------------
 inputs:
-   queues:
-      - queueName: GitTest1
-        accessType: "exclusive"
-        maxMsgSpoolUsage: 1234
-      - queueName: GitTest2
-        subscriptions:
-           - test/topic/1
-           - test/topic/*
-      - queueName: Git/Test3
-        subscriptions:
-           - test/>
+  # --------------------------------------------------------------
+  # Queues
+  #
+  # list of DMQs
+  # donnot override properties unless required
+  dmqueues:
+    - queueName: "#DEAD_MSG_QUEUE"
+    - queueName: DMQ.Test01
+  # list of queues
+  # individual queues can override the properties here
+  # subscriptions: can be added optionally
+  queues:
+    - queueName: Git.Test01
+      accessType: exclusive
+      maxMsgSpoolUsage: 1234
+      deadMsgQueue: DMQ.Test01
+    - queueName: Git.Test02
+      subscriptions:
+        - test/topic/1
+        - test/topic/*
+    - queueName: Git/Test03
+    - queueName: GitTest04
 
-   client-usernames:
-      - clientUsername: "git-test1"
-        aclProfileName: "git-test1-acl"
-        clientProfileName: "git-test1-profile"
-      - clientUsername: "git-test2"
-        aclProfileName: "git-test2-acl"
-        clientProfileName: "git-test2-profile"
-      - clientUsername: "git-test3"
-      - clientUsername: "git-test4"
+  # --------------------------------------------------------------
+  # Client Usernames
+  #
+  client-usernames:
+    - clientUsername: git-test41
+      aclProfileName: git-test41-acl
+      clientProfileName: git-test41-profile
+    - clientUsername: git-test42
+      aclProfileName: git-test42-acl
+      clientProfileName: git-test42-profile
+    - clientUsername: git-test43
+    - clientUsername: git-test44
+  # --------------------------------------------------------------
+  # Client Profiles
+  #
+  client-profiles:
+    - clientProfileName: git-test41-profile
+      allowBridgeConnectionsEnabled: true
+      allowGuaranteedEndpointCreateEnabled: true
+      allowGuaranteedMsgReceiveEnabled: true
+      allowGuaranteedMsgSendEnabled: true
+      allowSharedSubscriptionsEnabled: true
+      allowTransactedSessionsEnabled: true
+    - clientProfileName: git-test42-profile
+      allowGuaranteedMsgReceiveEnabled: true
+      allowGuaranteedMsgSendEnabled: true
+    - clientProfileName: git-test3-profile
+  # --------------------------------------------------------------
+  # ACL Profiles
+  # Exceptions are optional and can be added to the profile
+  acl-profiles:
+    - aclProfileName: git-test41-acl
+      clientConnectDefaultAction: disallow
+      clientConnectExceptions:
+        - 10.10.0.0/24
+        - 10.20.0.0/24
+      publishTopicExceptions:
+        - test/topic/1
+        - test/topic/2
+      subscribeTopicExceptions:
+        - test/topic/sub/3
+        - test/topic/sub/4
+    - aclProfileName: git-test42-acl
+      publishTopicDefaultAction: disallow
+    - aclProfileName: git-test43-acl
+    - aclProfileName: git-test44-acl
 
-   client-profiles:
-      - clientProfileName: "git-test1-profile"
-        allowBridgeConnectionsEnabled: true
-        allowGuaranteedEndpointCreateEnabled: true
-        allowGuaranteedMsgReceiveEnabled: true
-        allowGuaranteedMsgSendEnabled: true
-        allowSharedSubscriptionsEnabled: true
-        allowTransactedSessionsEnabled: true
-      - clientProfileName: "git-test2-profile"
-        allowGuaranteedMsgReceiveEnabled: true
-        allowGuaranteedMsgSendEnabled: true
-      - clientProfileName: "git-test3-profile"
-
-   acl-profiles:
-      - aclProfileName: "git-test1-acl"
-        clientConnectDefaultAction: "allow"
-      - aclProfileName: "git-test2-acl"
-        publishTopicDefaultAction: 'disallow'
-      - aclProfileName: "git-test3-acl"
-      - aclProfileName: "git-test4-acl"
-
-
-# Template values for creating Queues
+# --------------------------------------------------------------
+# Defaults for all inputs
+# The following defaults will be applied to all inputs above
+# any property can also be overridden in the individual input above
+# any property not in the defaults below or the override above will use Solace defaults
+# --------------------------------------------------------------
 defaults:
-   # Queue template to use for creating queues.
-   # These values can be overwritten in the input CSV file
-   # Any property not listed here / input CSV will use Solace defaults
-   queue:
-      accessType: "non-exclusive"
-      deadMsgQueue: "#DEAD_MSG_QUEUE"
-      maxBindCount: 10
-      maxDeliveredUnackedMsgsPerFlow: 1000
-      maxMsgSize: 1000000
-      maxMsgSpoolUsage: 1000
-      maxRedeliveryCount: 2
-      maxTtl: 0
-      owner: "solace-cloud-client"
-      permission: "no-access"
-      redeliveryEnabled: true
-      respectTtlEnabled: true
-      # subscriptionTopic: ""
-   dmqueue:
-      accessType: "exclusive"
-      deadMsgQueue: "#DEAD_MSG_QUEUE"
-      maxBindCount: 1
-      maxDeliveredUnackedMsgsPerFlow: 1000
-      maxMsgSize: 1000000
-      maxMsgSpoolUsage: 5000
-      maxRedeliveryCount: 0
-      maxTtl: 0
-      owner: "solace-cloud-client"
-      permission: "no-access"
-      redeliveryEnabled: false
-      respectTtlEnabled: false
-      subscriptionTopic: ""
-   client-user:
-      clientProfileName: "default"
-      aclProfileName: "default"
-   client-profile:
-      allowBridgeConnectionsEnabled: false
-      allowGuaranteedEndpointCreateEnabled: false
-      allowGuaranteedMsgReceiveEnabled: false
-      allowGuaranteedMsgSendEnabled: false
-      allowSharedSubscriptionsEnabled: false
-      allowTransactedSessionsEnabled: false
-      maxConnectionCountPerClientUsername: 100
-      maxEgressFlowCount: 100
-      maxIngressFlowCount: 100
-   acl-profile:
-      clientConnectDefaultAction: "disallow"
-      publishTopicDefaultAction: "allow"
-      subscribeTopicDefaultAction: "allow"
+  queue:
+    accessType: non-exclusive
+    deadMsgQueue: "#DEAD_MSG_QUEUE"
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 2
+    maxTtl: 0
+    owner: solace-cloud-client
+    permission: no-access
+    redeliveryEnabled: true
+    respectTtlEnabled: true
+  dmqueue:
+    accessType: exclusive
+    maxMsgSpoolUsage: 999
+  client-user:
+    clientProfileName: default
+    aclProfileName: default
+  client-profile:
+    allowBridgeConnectionsEnabled: false
+    allowGuaranteedEndpointCreateEnabled: false
+    allowGuaranteedMsgReceiveEnabled: false
+    allowGuaranteedMsgSendEnabled: false
+    allowSharedSubscriptionsEnabled: false
+    allowTransactedSessionsEnabled: false
+    maxConnectionCountPerClientUsername: 100
+    maxEgressFlowCount: 100
+    maxIngressFlowCount: 100
+  acl-profile:
+    clientConnectDefaultAction: disallow
+    publishTopicDefaultAction: allow
+    subscribeTopicDefaultAction: allow
 
+# --------------------------------------------------------------
+# System configuration
+# DONOT CHANGE THESE
+# --------------------------------------------------------------
 system:
-   configFile: "config/system.yaml"
+  configFile: config/system.yaml
