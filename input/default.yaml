@@ -3,7 +3,7 @@
 # User input file. This is the only file user needs to change.
 # Copy this file as input/default.yaml and change the values
 # On commit, Github action will trigger the workflow to run
-# 
+#  
 # IMPORTANT: 
 # DO NOT change the structure of this file
 # DO NOT add properties that are not in the sample
