@@ -137,7 +137,7 @@ class Queues():
             elif resp == 'ALREADY_EXISTS':
                 log.warning (f'{label} {entry_name} exists.')
             else:
-                log.error (f'{Queue} {entry_name} create failed: {resp}')
+                log.error (f'{label} {entry_name} create failed: {resp}')
             if dmqueue:
                 log.info ('Queue is a Dead Message Queue. Skipping subscriptions and JNDI mapping')
                 continue
