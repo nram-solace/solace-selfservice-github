@@ -1,6 +1,8 @@
 ---
 # ##############################################################
-# Sample input file for creating queues with Solace self provision tool
+# Sample input file for creating queues with JNDI mapping
+# using Solace self provision tool
+# copy this file as input/<your-branch-name>.yaml and update the values
 # ##############################################################
 
 # --------------------------------------------------------------
@@ -8,7 +10,7 @@
 # --------------------------------------------------------------
 params:
   # this name should be in one of the inventory file under inventory/ folder
-  tla-name: nram-test
+  tla-name: nram-local
   # verbose mode
   verbose: false
   create:
@@ -27,8 +29,9 @@ inputs:
   # --------------------------------------------------------------
   # Queues
   #
-  # list of DMQs
-  # donnot override properties unless required
+  # list of DMQs 
+  # If there are DMQs, comment this section out.
+  # DONOT override DMQ properties unless required
   dmqueues:
     - queueName: "#DEAD_MSG_QUEUE"
     - queueName: DMQ.Test01
@@ -36,37 +39,46 @@ inputs:
   # individual queues can override the properties here
   # subscriptions: can be added optionally
   queues:
-    - queueName: Git.Test01
+    - queueName: Test.Q1
+      # following will override the defaults
       accessType: exclusive
       maxMsgSpoolUsage: 1234
       deadMsgQueue: DMQ.Test01
-    - queueName: Git.Test02
+      # list of subscriptions can  be added optionally
+      subscriptions:
+        - hello/world/>
+        - howdy/>
+    - queueName: Test.Q2
       subscriptions:
         - test/topic/1
         - test/topic/*
-    - queueName: Git/Test03
-    - queueName: GitTest04
+      # queue with no subscriptions
+    - queueName: Test.Q3
+      maxBindCount: 5
+    # queue with no properties override or subscription
+    - queueName: Test.Q4
 
 # --------------------------------------------------------------
 # Defaults for all inputs
 # --------------------------------------------------------------
 defaults:
+  # override queue defaults as required
   queue:
     accessType: non-exclusive
     deadMsgQueue: "#DEAD_MSG_QUEUE"
     maxBindCount: 10
     maxDeliveredUnackedMsgsPerFlow: 1000
     maxMsgSize: 1000000
-    maxMsgSpoolUsage: 1000
+    maxMsgSpoolUsage: 1234
     maxRedeliveryCount: 2
-    maxTtl: 0
-    owner: solace-cloud-client
+    maxTtl: 60
+    owner: test-user1
     permission: no-access
     redeliveryEnabled: true
     respectTtlEnabled: true
+  # DO NOT override dmqueue properties unless required
   dmqueue:
     accessType: exclusive
-    maxMsgSpoolUsage: 999
 
 # --------------------------------------------------------------
 # System configuration
