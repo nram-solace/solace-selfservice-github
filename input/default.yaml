@@ -16,7 +16,7 @@
 # --------------------------------------------------------------
 params:
   # this name should be in one of the inventory file under inventory/ folder
-  tla-name: nram-local-test
+  tla-name: nram-test
   # verbose mode
   verbose: false
   create:
