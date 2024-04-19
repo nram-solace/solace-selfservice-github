@@ -1,6 +1,6 @@
 ---
 # ##############################################################
-# nram-dev.yaml
+# Sample input file for creating queues with Solace self provision tool
 # ##############################################################
 
 # --------------------------------------------------------------
@@ -8,19 +8,17 @@
 # --------------------------------------------------------------
 params:
   # this name should be in one of the inventory file under inventory/ folder
-  tla-name: nram-dev
+  tla-name: nram-test
   # verbose mode
   verbose: false
   create:
+    - queues
     #- dmqueues
     # queues will auto create dmqueues
-    - queues
     # client username will auto create client-profiles, acl-profiles
     #- client-usernames
     #- client-profiles
     #- acl-profiles
-  # update is not supported yet
-  update: null
 
 # --------------------------------------------------------------
 # User inputs
@@ -33,20 +31,21 @@ inputs:
   # donnot override properties unless required
   dmqueues:
     - queueName: "#DEAD_MSG_QUEUE"
-    - queueName: DMQ.nram.dev
+    - queueName: DMQ.Test01
   # list of queues
   # individual queues can override the properties here
   # subscriptions: can be added optionally
   queues:
-    - queueName: nram.dev.q1
+    - queueName: Git.Test01
       accessType: exclusive
       maxMsgSpoolUsage: 1234
       deadMsgQueue: DMQ.Test01
+    - queueName: Git.Test02
       subscriptions:
-        - test/nram/dev/1
-        - test/nram/dev/xyz/>
-    - queueName: nram.dev.q5
-
+        - test/topic/1
+        - test/topic/*
+    - queueName: Git/Test03
+    - queueName: GitTest04
 
 # --------------------------------------------------------------
 # Defaults for all inputs
@@ -68,23 +67,6 @@ defaults:
   dmqueue:
     accessType: exclusive
     maxMsgSpoolUsage: 999
-  client-user:
-    clientProfileName: default
-    aclProfileName: default
-  client-profile:
-    allowBridgeConnectionsEnabled: false
-    allowGuaranteedEndpointCreateEnabled: false
-    allowGuaranteedMsgReceiveEnabled: false
-    allowGuaranteedMsgSendEnabled: false
-    allowSharedSubscriptionsEnabled: false
-    allowTransactedSessionsEnabled: false
-    maxConnectionCountPerClientUsername: 100
-    maxEgressFlowCount: 100
-    maxIngressFlowCount: 100
-  acl-profile:
-    clientConnectDefaultAction: disallow
-    publishTopicDefaultAction: allow
-    subscribeTopicDefaultAction: allow
 
 # --------------------------------------------------------------
 # System configuration
