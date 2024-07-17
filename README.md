@@ -1,7 +1,13 @@
-# NT Solace Self Service
+# Github actions POC
 
-Tools for provisioning and managing NT Solace infrastructure with Github Actions workflow.
+Tools for provisioning and managing Solace infrastructure with [Github Actions](https://docs.github.com/en/actions) workflow. 
 
-[NT Git Repo](https://url.us.m.mimecastprotect.com/s/c7JJCqx5vLhODDRKcZIio6?domain=github.com)
 
-[NT Confluence page](https://url.us.m.mimecastprotect.com/s/yljNC4xw7GhJyy6GHO5WjN?domain=entcfn.ntrs.com)
+## Options supported 
+- Create multiple queues and auto create JNDI Mapping
+- Create multiple client usernames with associated ACL and Client profiles.
+
+### Not supported
+- All objects other than Queues, JNDI Mapping, Client username, ACL and Client Profile
+- Update properties (eg: update queue spool size)
+- Delete objects (eg: delete a client username)
