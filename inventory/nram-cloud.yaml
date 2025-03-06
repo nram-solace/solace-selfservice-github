@@ -21,8 +21,13 @@ inventory:
       host: "sc-nram-dev1"
       sempUrl: "https://nram-dev1.messaging.solace.cloud:943"
       sempUser: "nram-dev1-admin"
+      
+    - name: "nram-poc"
+      host: "aks-poc2"
+      sempUrl: "https://nram-poc2.messaging.solace.cloud:943"
+      sempUser: "aks-poc2-admin"
       #sempPassword: "secret" # read from env
-      vpn: "nram-dev1"
+      vpn: "aks-poc2"
 
     - name: "nram-test"
       host: "sc-nram-test"
