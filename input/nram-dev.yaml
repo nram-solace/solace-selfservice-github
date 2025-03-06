@@ -10,7 +10,7 @@ params:
   # this name should be in one of the inventory file under inventory/ folder
   tla-name: nram-dev
   # verbose mode
-  verbose: true
+  verbose: false
   create:
     #- dmqueues
     # queues will auto create dmqueues
@@ -33,19 +33,19 @@ inputs:
   # donnot override properties unless required
   dmqueues:
     - queueName: "#DEAD_MSG_QUEUE"
-    - queueName: DMQ.nram.dev.q1
+    - queueName: DMQ.nram.dev.q3
   # list of queues
   # individual queues can override the properties here
   # subscriptions: can be added optionally
   queues:
-    - queueName: nram.dev.q1
+    - queueName: nram.dev.q3
       accessType: exclusive
       maxMsgSpoolUsage: 1234
-      deadMsgQueue: DMQ.nram.dev.q1
+      deadMsgQueue: DMQ.nram.dev.q3
       subscriptions:
         - test/nram/dev/1
         - test/nram/dev/xyz/>
-    - queueName: nram.dev.q2
+    - queueName: nram.dev.q4
 
 
 # --------------------------------------------------------------
