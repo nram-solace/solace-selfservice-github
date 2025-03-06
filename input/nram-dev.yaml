@@ -38,7 +38,7 @@ inputs:
   # individual queues can override the properties here
   # subscriptions: can be added optionally
   queues:
-    - queueName: nram.dev.q1
+    - queueName: nram.dev.q2
       accessType: exclusive
       maxMsgSpoolUsage: 1234
       deadMsgQueue: DMQ.nram.dev.q1
