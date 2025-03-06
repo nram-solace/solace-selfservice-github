@@ -10,6 +10,13 @@ inventory:
     hosts:
     # env + name is a unique string across all inventory files
     # this will be used in the input/default.yaml file to reference the host
+    - name: "nram-poc"
+      host: "aks-poc2"
+      sempUrl: "https://nram-poc2.messaging.solace.cloud:943"
+      sempUser: "aks-poc2-admin"
+      #sempPassword: "secret" # read from env
+      vpn: "aks-poc2"
+      
     - name: "nram-dev"
       host: "sc-nram-dev1"
       sempUrl: "https://nram-dev1.messaging.solace.cloud:943"
