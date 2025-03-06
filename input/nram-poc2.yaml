@@ -39,14 +39,14 @@ inputs:
   # individual queues can override the properties here
   # subscriptions: can be added optionally
   queues:
-    - queueName: NRAM.POC.Q1
+    - queueName: NRAM.POC.Q3
       accessType: exclusive
       maxMsgSpoolUsage: 1234
       deadMsgQueue: DMQ.NRAM.POC
       subscriptions:
         - test/nram/dev/1
         - test/nram/dev/xyz/>
-    - queueName: NRAM.POC.Q2
+    - queueName: NRAM.POC.Q4
 
 
 # --------------------------------------------------------------
