@@ -1,0 +1,5 @@
+---
+# Default acl-profile configuration
+clientConnectDefaultAction: disallow
+publishTopicDefaultAction: allow
+subscribeTopicDefaultAction: allow 

@@ -1,0 +1,4 @@
+clientProfileName,allowBridgeConnectionsEnabled,allowGuaranteedEndpointCreateEnabled,allowGuaranteedMsgReceiveEnabled,allowGuaranteedMsgSendEnabled,allowSharedSubscriptionsEnabled,allowTransactedSessionsEnabled
+csv-test-cp1,true,true,true,true,true,true
+csv-test-cp2,,,true,true,,
+

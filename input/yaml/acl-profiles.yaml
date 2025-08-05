@@ -1,0 +1,25 @@
+params:
+  tla-name: nram-local
+  verbose: false
+  create:
+  - acl-profiles
+inputs:
+  acl-profiles:
+  - clientConnectDefaultAction: disallow
+    publishTopicDefaultAction: allow
+    subscribeTopicDefaultAction: allow
+    aclProfileName: csv-test-acl1
+    clientConnectExceptions:
+    - 10.10.0.0/24
+    - 10.20.0.0/24
+  - clientConnectDefaultAction: disallow
+    publishTopicDefaultAction: allow
+    subscribeTopicDefaultAction: allow
+    aclProfileName: csv-test-acl2
+defaults:
+  acl-profiles:
+    clientConnectDefaultAction: disallow
+    publishTopicDefaultAction: allow
+    subscribeTopicDefaultAction: allow
+system:
+  configFile: config/system.yaml
