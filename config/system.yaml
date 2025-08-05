@@ -2,7 +2,7 @@
 # System configs
 # DONOT CHANGE VALUES BELOW
 system:
-  outputDir: output
+  outputDir: output/json
   logDir: logs
   inventoryDir: inventory
 
