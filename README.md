@@ -20,7 +20,7 @@ pip install -r requirements.txt
 2. **Set authentication**: `export SEMP_PASSWORD=your_broker_password`  
 3. **Run automation**:
    ```bash
-   python3 scripts/solace-service-manager.py --input input/default.yaml -v
+   python3 scripts/yaml_to_semp.py --input input/default.yaml -v
    ```
 
 ## Input Formats
@@ -28,14 +28,14 @@ pip install -r requirements.txt
 ### YAML Input
 Direct configuration in `input/` directory:
 ```bash
-python3 scripts/solace-service-manager.py --input input/test.yaml
+python3 scripts/yaml_to_semp.py --input input/test.yaml
 ```
 
 ### CSV Input
 Convert CSV files to YAML format first:
 ```bash
 python3 scripts/csv_to_yaml.py --tla-name myapp --csv-file input/csv/queues.csv
-bash scripts/process_csv.sh  # Process all CSV files
+bash scripts/solace_self_service.sh  # Process all CSV files
 ```
 
 ## Supported Operations
