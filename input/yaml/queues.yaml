@@ -1,0 +1,170 @@
+params:
+  tla-name: nram-local
+  verbose: false
+  create:
+  - queues
+inputs:
+  queues:
+  - accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 100
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 2000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: nram-test-user1
+    permission: no-access
+    redeliveryEnabled: true
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+    queueName: csv-testq1
+    subscriptions:
+    - test/topic/2/hello
+    - test/topic/2/world
+  - accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: default
+    permission: no-access
+    redeliveryEnabled: true
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+    queueName: csv-testq2
+    subscriptions:
+    - test/topic/2/hello
+    - test/topic/2/world
+  - accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: default
+    permission: no-access
+    redeliveryEnabled: true
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+    queueName: csv-testq3
+  - accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: default
+    permission: no-access
+    redeliveryEnabled: false
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+    queueName: csv-testq4
+  - accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: default
+    permission: no-access
+    redeliveryEnabled: false
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+    queueName: csv-testq5
+  - accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: default
+    permission: no-access
+    redeliveryEnabled: false
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+    queueName: csv-testq6
+  - accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: default
+    permission: no-access
+    redeliveryEnabled: false
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+    queueName: csv-testq7
+  - accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: default
+    permission: no-access
+    redeliveryEnabled: false
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+    queueName: csv-testq8
+  - accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: default
+    permission: no-access
+    redeliveryEnabled: false
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+    queueName: csv-testq9
+  - accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: default
+    permission: no-access
+    redeliveryEnabled: false
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+    queueName: csv-testq10
+defaults:
+  queues:
+    accessType: non-exclusive
+    deadMsgQueue: '#DEAD_MSG_QUEUE'
+    maxBindCount: 10
+    maxDeliveredUnackedMsgsPerFlow: 1000
+    maxMsgSize: 1000000
+    maxMsgSpoolUsage: 1000
+    maxRedeliveryCount: 0
+    maxTtl: 0
+    owner: default
+    permission: no-access
+    redeliveryEnabled: true
+    respectTtlEnabled: true
+    deliveryCountEnabled: true
+system:
+  configFile: config/system.yaml

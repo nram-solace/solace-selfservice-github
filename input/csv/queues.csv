@@ -1,0 +1,11 @@
+queueName,maxBindCount,maxMsgSpoolUsage,owner,subscriptions,redeliveryEnabled
+csv-testq1,100,2000,nram-test-user1,"test/topic/2/hello,test/topic/2/world",true
+csv-testq2,,,,"test/topic/2/hello,test/topic/2/world",
+csv-testq3,,,,,
+csv-testq4,,,,,false 
+csv-testq5,,,,,false 
+csv-testq6,,,,,false 
+csv-testq7,,,,,false 
+csv-testq8,,,,,false 
+csv-testq9,,,,,false 
+csv-testq10,,,,,false 

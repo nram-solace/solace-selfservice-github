@@ -1,0 +1,11 @@
+---
+# Default client-profile configuration
+allowBridgeConnectionsEnabled: false
+allowGuaranteedEndpointCreateEnabled: false
+allowGuaranteedMsgReceiveEnabled: false
+allowGuaranteedMsgSendEnabled: false
+allowSharedSubscriptionsEnabled: false
+allowTransactedSessionsEnabled: false
+maxConnectionCountPerClientUsername: 100
+maxEgressFlowCount: 100
+maxIngressFlowCount: 100 
