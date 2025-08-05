@@ -1,19 +1,20 @@
 #!/bin/bash
 #
-# CSV Processing Wrapper Script
-# Takes absolute path of CSV file, converts to YAML, and processes with solace-service-manager
+# Solace Self Service Script
+# Takes absolute path of CSV file, converts to YAML, and processes with yaml_to_semp
 #
 # Usage:
-#     ./scripts/process_csv.sh --csv-file /absolute/path/to/file.csv --tla-name <tla-name> [--verbose]
+#     ./scripts/solace_self_service.sh --csv-file /absolute/path/to/file.csv --tla-name <tla-name> [--verbose]
 #
 # Example:
-#     ./scripts/process_csv.sh --csv-file /workspace/input/csv/queues.csv --tla-name sys2vpn45 --verbose
+#     ./scripts/solace_self_service.sh --csv-file /workspace/input/csv/queues.csv --tla-name sys2vpn45 --verbose
 #
 
 set -e  # Exit on any error
 
 # Script configuration
-SCRIPT_PREFIX="Solace Wrapper"
+SCRIPT_PREFIX="Solace Self Service"
+VERSION="2.3.0 - 2025-08-05"
 
 # Colors for output
 RED='\033[0;31m'
@@ -48,6 +49,7 @@ warning() {
 }
 
 # Note: Colorization is handled directly in the Python scripts
+# Scripts: csv_to_yaml.py and yaml_to_semp.py
 
 # Parse command line arguments
 CSV_FILE=""
@@ -119,6 +121,7 @@ if [[ ! "$CSV_FILE" =~ \.csv$ ]]; then
     exit 1
 fi
 
+log "Version $VERSION"
 log "Processing CSV file: $CSV_FILE"
 log "TLA name: $TLA_NAME"
 log "Project root: $PROJECT_ROOT"
@@ -163,7 +166,7 @@ log "Generated YAML file: $YAML_FILE"
 log "Step 2: Processing with solace-service-manager..."
 
 SOLACE_CMD=(
-    python3 "$SCRIPT_DIR/solace-service-manager.py"
+    python3 "$SCRIPT_DIR/yaml_to_semp.py"
     --input "$YAML_FILE"
 )
 
