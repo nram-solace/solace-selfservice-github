@@ -18,6 +18,13 @@
 me = "solace-service-manager"
 ver = 'v2.2.8 (2024-04-19)'
 
+# Script configuration
+SCRIPT_PREFIX = "[YAML to SEMP]"
+
+# Colors for output
+CYAN = '\033[0;36m'
+NC = '\033[0m'  # No Color
+
 import sys, os
 import argparse
 import json
@@ -56,18 +63,18 @@ def main(argv):
                 help='Verbose output. use -vvv for tracing')
     r = p.parse_args()
 
-    print ('{}-{} Starting {} args: {}\n'.format(me,ver, sys.argv[0], str(sys.argv[1:])))
+    print ('{}{}{} {}-{} Starting {} args: {}\n'.format(CYAN, SCRIPT_PREFIX, NC, me,ver, sys.argv[0], str(sys.argv[1:])))
 
     if r.verbose:    
-        print ("http proxy: ", os.environ.get('http_proxy'))
-        print ("Python version: ", sys.version)
+        print ("{}{}{} http proxy: ".format(CYAN, SCRIPT_PREFIX, NC), os.environ.get('http_proxy'))
+        print ("{}{}{} Python version: ".format(CYAN, SCRIPT_PREFIX, NC), sys.version)
     
     # check if input file exists
     if not os.path.exists(r.input_file):
-        print ('ERROR: input file {} not found'.format(r.input_file))
+        print ('{}{}{} ERROR: input file {} not found'.format(CYAN, SCRIPT_PREFIX, NC, r.input_file))
         sys.exit(1)
         
-    print ("Reading input file: {}".format(r.input_file))
+    print ("{}{}{} Reading input file: {}".format(CYAN, SCRIPT_PREFIX, NC, r.input_file))
     yaml_h = YamlHandler.YamlHandler()
     input_data_all = yaml_h.read_config_file(r.input_file)
     #if r.verbose:
@@ -75,7 +82,7 @@ def main(argv):
     input_data = input_data_all['inputs']   
     
     sys_cfg_file = input_data_all['system']['configFile']
-    print ("Reading system config file: {}".format(sys_cfg_file))
+    print ("{}{}{} Reading system config file: {}".format(CYAN, SCRIPT_PREFIX, NC, sys_cfg_file))
 
     system_config_all = yaml_h.read_config_file (sys_cfg_file)
     system_cfg = system_config_all['system']
@@ -85,6 +92,7 @@ def main(argv):
     cfg['router'] = {}
     cfg['script_name'] = me
     cfg['system'] = system_config_all.copy() # store system cfg in the global Cfg dict
+    
     # copy input data to Cfg
     run_params = input_data_all['params']
     verbose = run_params['verbose']
@@ -92,6 +100,41 @@ def main(argv):
     if r.verbose:
         verbose = r.verbose
     cfg['verbose'] = verbose
+    
+    # Load default configurations from config/defaults/ directory
+    cfg['defaults'] = {}
+    defaults_dir = 'config/defaults'
+    
+    # Mapping from object types to default file names
+    object_to_default_mapping = {
+        'queues': 'queue',
+        'client-usernames': 'client-user',
+        'client-profiles': 'client-profile',
+        'acl-profiles': 'acl-profile',
+        'dmqueues': 'dmqueue'
+    }
+    
+    if os.path.exists(defaults_dir):
+        for filename in os.listdir(defaults_dir):
+            if filename.endswith('.yaml'):
+                object_type = filename.replace('.yaml', '')
+                default_file = os.path.join(defaults_dir, filename)
+                try:
+                    default_config = yaml_h.read_config_file(default_file)
+                    cfg['defaults'][object_type] = default_config
+                    if verbose:
+                        print(f"{CYAN}[{SCRIPT_PREFIX}]{NC} Loaded default config for {object_type}: {default_file}")
+                except Exception as e:
+                    print(f"{CYAN}[{SCRIPT_PREFIX}]{NC} Warning: Could not load default config {default_file}: {e}")
+    
+    # Also load defaults from the input file if present
+    if 'defaults' in input_data_all:
+        for object_type, default_config in input_data_all['defaults'].items():
+            # Map plural object types to singular for internal use
+            internal_object_type = object_to_default_mapping.get(object_type, object_type)
+            cfg['defaults'][internal_object_type] = default_config
+            if verbose:
+                print(f"{CYAN}[{SCRIPT_PREFIX}]{NC} Loaded default config from input file for {object_type} -> {internal_object_type}")
     #if verbose :
     #    print ('SYSTEM CONFIG'); pp.pprint (system_config_all)
                 
@@ -108,7 +151,7 @@ def main(argv):
     cfg['log_handler'] = log_h
 
     # Read the inventory file
-    print ('Reading inventory from {}/ folder'.format(system_cfg['inventoryDir']))
+    print ('{}{}{} Reading inventory from {}/ folder'.format(CYAN, SCRIPT_PREFIX, NC, system_cfg['inventoryDir']))
     inv = Inventory.Inventory(cfg, r.verbose)
     inv_data = inv.read_inventory_dir(system_cfg['inventoryDir'])
     
@@ -154,7 +197,7 @@ def main(argv):
     if 'create' in run_params and run_params['create'] is not None:
         for entry in run_params['create']:
             print ('\n')
-            log.notice ('Processing create {}'.format(entry))
+            log.notice ('[{} {}] Processing create {}'.format(SCRIPT_PREFIX, entry.upper(), entry))
             if entry not in input_data:
                 log.warning ('No {} entry in input file'.format(entry))
                 continue
@@ -183,7 +226,7 @@ def main(argv):
     if 'delete' in run_params and run_params['delete'] is not None:
         for entry in run_params['delete']:
             print ('\n')
-            log.notice ('Processing delete {}'.format(entry))
+            log.notice ('[{} {}] Processing delete {}'.format(SCRIPT_PREFIX, entry.upper(), entry))
             if entry == 'dmqueues':
                 queue_h.delete_queues (input_data['dmqueues'])
             if entry == 'queues':

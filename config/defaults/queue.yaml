@@ -1,0 +1,15 @@
+---
+# Default queue configuration
+accessType: "non-exclusive"
+deadMsgQueue: "#DEAD_MSG_QUEUE"
+maxBindCount: 10
+maxDeliveredUnackedMsgsPerFlow: 1000
+maxMsgSize: 1000000
+maxMsgSpoolUsage: 1000
+maxRedeliveryCount: 0
+maxTtl: 0
+owner: "default"
+permission: "no-access"
+redeliveryEnabled: true
+respectTtlEnabled: true
+deliveryCountEnabled: true 

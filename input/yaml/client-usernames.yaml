@@ -1,0 +1,43 @@
+params:
+  tla-name: nram-local
+  verbose: false
+  create:
+  - client-usernames
+inputs:
+  client-usernames:
+  - clientProfileName: csv-test-cp1
+    aclProfileName: csv-test-acl1
+    clientUsername: csv-test-user1
+  - clientProfileName: csv-test-cp2
+    aclProfileName: csv-test-acl2
+    clientUsername: csv-test-user2
+  - clientProfileName: default
+    aclProfileName: default
+    clientUsername: csv-test-user3
+  - clientProfileName: default
+    aclProfileName: default
+    clientUsername: csv-test-user4
+  - clientProfileName: default
+    aclProfileName: default
+    clientUsername: csv-test-user5
+  - clientProfileName: default
+    aclProfileName: default
+    clientUsername: csv-test-user6
+  - clientProfileName: default
+    aclProfileName: default
+    clientUsername: csv-test-user7
+  - clientProfileName: default
+    aclProfileName: default
+    clientUsername: csv-test-user8
+  - clientProfileName: default
+    aclProfileName: default
+    clientUsername: csv-test-user9
+  - clientProfileName: default
+    aclProfileName: default
+    clientUsername: csv-test-user10
+defaults:
+  client-usernames:
+    clientProfileName: default
+    aclProfileName: default
+system:
+  configFile: config/system.yaml

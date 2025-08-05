@@ -1,0 +1,40 @@
+params:
+  tla-name: nram-local
+  verbose: false
+  create:
+  - client-profiles
+inputs:
+  client-profiles:
+  - allowBridgeConnectionsEnabled: true
+    allowGuaranteedEndpointCreateEnabled: true
+    allowGuaranteedMsgReceiveEnabled: true
+    allowGuaranteedMsgSendEnabled: true
+    allowSharedSubscriptionsEnabled: true
+    allowTransactedSessionsEnabled: true
+    maxConnectionCountPerClientUsername: 100
+    maxEgressFlowCount: 100
+    maxIngressFlowCount: 100
+    clientProfileName: csv-test-cp1
+  - allowBridgeConnectionsEnabled: false
+    allowGuaranteedEndpointCreateEnabled: false
+    allowGuaranteedMsgReceiveEnabled: true
+    allowGuaranteedMsgSendEnabled: true
+    allowSharedSubscriptionsEnabled: false
+    allowTransactedSessionsEnabled: false
+    maxConnectionCountPerClientUsername: 100
+    maxEgressFlowCount: 100
+    maxIngressFlowCount: 100
+    clientProfileName: csv-test-cp2
+defaults:
+  client-profiles:
+    allowBridgeConnectionsEnabled: false
+    allowGuaranteedEndpointCreateEnabled: false
+    allowGuaranteedMsgReceiveEnabled: false
+    allowGuaranteedMsgSendEnabled: false
+    allowSharedSubscriptionsEnabled: false
+    allowTransactedSessionsEnabled: false
+    maxConnectionCountPerClientUsername: 100
+    maxEgressFlowCount: 100
+    maxIngressFlowCount: 100
+system:
+  configFile: config/system.yaml
