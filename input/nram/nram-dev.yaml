@@ -8,7 +8,7 @@
 # --------------------------------------------------------------
 params:
   # this name should be in one of the inventory file under inventory/ folder
-  tla-name: nram-dev
+  tla-name: nram-local
   # verbose mode
   verbose: false
   create:

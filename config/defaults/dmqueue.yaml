@@ -1,0 +1,3 @@
+---
+# Default dmqueue configuration
+accessType: "exclusive" 
