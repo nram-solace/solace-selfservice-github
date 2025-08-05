@@ -11,6 +11,9 @@ Example:
     # Output: input/yaml/queues.yaml
 """
 
+# Version information
+VERSION = "2.3.0 - 2025-08-05"
+
 import sys
 import os
 import csv
@@ -244,6 +247,9 @@ def main():
     parser.add_argument('--output-file', help='Output YAML file path (optional)')
     
     args = parser.parse_args()
+    
+    # Print version
+    print(f"{CSVToYAMLConverter.MAGENTA}[{CSVToYAMLConverter.SCRIPT_PREFIX}]{CSVToYAMLConverter.NC} Version {VERSION}")
     
     # Convert verbose count to boolean
     verbose = args.verbose > 0
