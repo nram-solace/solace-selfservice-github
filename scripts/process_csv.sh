@@ -133,7 +133,7 @@ CSV_TO_YAML_CMD=(
 )
 
 if [[ "$VERBOSE" == "true" ]]; then
-    CSV_TO_YAML_CMD+=(--verbose "true")
+    CSV_TO_YAML_CMD+=(--verbose)
 fi
 
 log "Running: ${CSV_TO_YAML_CMD[*]}"

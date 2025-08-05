@@ -238,15 +238,15 @@ def main():
     """Main function"""
     parser = argparse.ArgumentParser(description='Convert CSV files to YAML configuration')
     parser.add_argument('--tla-name', required=True, help='TLA name (e.g., sys2vpn45)')
-    parser.add_argument('--verbose', choices=['true', 'false'], default='false', 
-                       help='Verbose output (default: false)')
+    parser.add_argument('--verbose', '-v', action='count', default=0,
+                       help='Verbose output. Use -vvv for more verbose output')
     parser.add_argument('--csv-file', required=True, help='Path to CSV file')
     parser.add_argument('--output-file', help='Output YAML file path (optional)')
     
     args = parser.parse_args()
     
-    # Convert verbose string to boolean
-    verbose = args.verbose.lower() == 'true'
+    # Convert verbose count to boolean
+    verbose = args.verbose > 0
     
     # Create converter
     converter = CSVToYAMLConverter(verbose=verbose)
