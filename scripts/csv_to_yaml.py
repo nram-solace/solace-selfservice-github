@@ -12,7 +12,7 @@ Example:
 """
 
 # Version information
-VERSION = "2.4.0-250821"
+VERSION = "2.4.1-250821"
 
 import sys
 import os
@@ -182,17 +182,17 @@ class CSVToYAMLConverter:
         return merged_objects
     
     def validate_and_filter_vpn_names(self, objects: List[Dict[str, Any]]) -> tuple[str, List[Dict[str, Any]]]:
-        """Validate vpn-names and filter objects with consistent vpn-name"""
+        """Validate vpnNames and filter objects with consistent vpnName"""
         if not objects:
             raise ValueError("No objects to process")
         
-        # Get vpn-name from first record
-        if 'vpn-name' not in objects[0]:
-            raise ValueError("vpn-name column not found in CSV file")
+        # Get vpnName from first record
+        if 'vpnName' not in objects[0]:
+            raise ValueError("vpnName column not found in CSV file")
         
-        target_vpn_name = objects[0]['vpn-name']
+        target_vpn_name = objects[0]['vpnName']
         if not target_vpn_name or target_vpn_name.strip() == '':
-            raise ValueError("vpn-name in first record is empty")
+            raise ValueError("vpnName in first record is empty")
         
         valid_objects = []
         skipped_count = 0
@@ -201,42 +201,42 @@ class CSVToYAMLConverter:
         for i, obj in enumerate(objects):
             current_vpn_name = None
             
-            # Handle missing vpn-name column or empty value
-            if 'vpn-name' not in obj or not obj['vpn-name'] or obj['vpn-name'].strip() == '':
-                # Use vpn-name from first record
+            # Handle missing vpnName column or empty value
+            if 'vpnName' not in obj or not obj['vpnName'] or obj['vpnName'].strip() == '':
+                # Use vpnName from first record
                 current_vpn_name = target_vpn_name
                 missing_vpn_count += 1
                 if self.verbose:
-                    self.log(f"Record {i+1}: Using vpn-name '{target_vpn_name}' from first record (missing/empty)")
+                    self.log(f"Record {i+1}: Using vpnName '{target_vpn_name}' from first record (missing/empty)")
             else:
-                current_vpn_name = obj['vpn-name']
+                current_vpn_name = obj['vpnName']
             
-            # Check if vpn-name matches the target
+            # Check if vpnName matches the target
             if current_vpn_name != target_vpn_name:
-                self.log(f"Warning: Record {i+1} has vpn-name '{current_vpn_name}' but expected '{target_vpn_name}', skipping")
+                self.log(f"Warning: Record {i+1} has vpnName '{current_vpn_name}' but expected '{target_vpn_name}', skipping")
                 skipped_count += 1
                 continue
             
-            # Create a copy without vpn-name for the object configuration
+            # Create a copy without vpnName for the object configuration
             obj_copy = obj.copy()
-            if 'vpn-name' in obj_copy:
-                del obj_copy['vpn-name']
+            if 'vpnName' in obj_copy:
+                del obj_copy['vpnName']
             valid_objects.append(obj_copy)
         
         if missing_vpn_count > 0:
-            self.log(f"Applied default vpn-name '{target_vpn_name}' to {missing_vpn_count} records with missing/empty vpn-name")
+            self.log(f"Applied default vpnName '{target_vpn_name}' to {missing_vpn_count} records with missing/empty vpnName")
         
         if skipped_count > 0:
-            self.log(f"Skipped {skipped_count} records due to vpn-name mismatch")
+            self.log(f"Skipped {skipped_count} records due to vpnName mismatch")
         
         if not valid_objects:
-            raise ValueError(f"No valid records found for vpn-name '{target_vpn_name}'")
+            raise ValueError(f"No valid records found for vpnName '{target_vpn_name}'")
         
-        self.log(f"Processing {len(valid_objects)} records for vpn-name '{target_vpn_name}'")
+        self.log(f"Processing {len(valid_objects)} records for vpnName '{target_vpn_name}'")
         return target_vpn_name, valid_objects
     
     def generate_yaml_output(self, verbose: bool, csv_file: str) -> Dict[str, Any]:
-        """Generate YAML output structure with vpn-name validation"""
+        """Generate YAML output structure with vpnName validation"""
         
         # Determine object type from CSV filename
         object_type = self.get_object_type_from_filename(csv_file)
@@ -251,7 +251,7 @@ class CSVToYAMLConverter:
         if not objects:
             raise ValueError(f"No data found in CSV file: {csv_file}")
         
-        # Validate and filter objects by vpn-name
+        # Validate and filter objects by vpnName
         vpn_name, valid_objects = self.validate_and_filter_vpn_names(objects)
         
         # Read defaults
@@ -264,7 +264,7 @@ class CSVToYAMLConverter:
         # Build the output structure
         output = {
             'params': {
-                'vpn-name': vpn_name,
+                'vpnName': vpn_name,
                 'verbose': verbose,
                 'create': [object_type]
             },

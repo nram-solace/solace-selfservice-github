@@ -14,7 +14,7 @@ set -e  # Exit on any error
 
 # Script configuration
 SCRIPT_PREFIX="Solace Self Service"
-VERSION="2.4.0-250821"
+VERSION="2.4.1-250821"
 
 # Colors for output
 RED='\033[0;31m'
@@ -69,7 +69,7 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 --csv-file <csv-file> [--verbose]"
             echo ""
             echo "Arguments:"
-            echo "  --csv-file    Absolute path to CSV file to process (must contain vpn-name column)"
+            echo "  --csv-file    Absolute path to CSV file to process (must contain vpnName column)"
             echo "  --verbose     Enable verbose output"
             echo "  -h, --help    Show this help message"
             echo ""
@@ -77,7 +77,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0 --csv-file /workspace/input/csv/queues.csv"
             echo "  $0 --csv-file /workspace/input/csv/client-profiles.csv --verbose"
             echo ""
-            echo "Note: The CSV file must contain a 'vpn-name' column to identify the target environment."
+            echo "Note: The CSV file must contain a 'vpnName' column to identify the target environment."
             exit 0
             ;;
         *)
