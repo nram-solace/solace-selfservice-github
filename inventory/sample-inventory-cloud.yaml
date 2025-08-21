@@ -11,7 +11,7 @@ inventory:
     # name is used in the input/csv/queues.csv in the first column (vpnName)
     - name: "nram-prod1-gke"
       host: "nram-gke-poc"
-      sempUrl: "https://nram-gke-poc.messaging.solace.cloud:943"
+      sempUrl: "https://mr-connection-ipvocjircbz.messaging.solace.cloud:943"
       sempUser: "nram-prod1-admin"
       #sempPassword: "secret" # read from env
       vpn: "nram-prod1"
