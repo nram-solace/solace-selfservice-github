@@ -34,7 +34,7 @@ python3 scripts/yaml_to_semp.py --input input/test.yaml
 ### CSV Input
 Convert CSV files to YAML format first:
 ```bash
-python3 scripts/csv_to_yaml.py --tla-name myapp --csv-file input/csv/queues.csv
+python3 scripts/csv_to_yaml.py --csv-file input/csv/queues.csv
 bash scripts/solace_self_service.sh  # Process all CSV files
 ```
 
