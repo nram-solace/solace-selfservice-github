@@ -16,7 +16,7 @@
 # Ramesh Natarajan (nram), Solace PSG (ramesh.natarajan@solace.com)
 ########################################################################
 me = "yaml-to-semp"
-ver = '2.4.0-250821'
+ver = '2.4.1-250821'
 
 # Script configuration
 SCRIPT_PREFIX = "[YAML to SEMP]"
@@ -164,7 +164,7 @@ def main(argv):
     for k in inv_data:
         log.info ('{}     : {}'.format(k, json.dumps(inv_data[k], cls=CustomEncoder,indent=2)))            
     
-    app_id = input_data_all['params']['vpn-name']
+    app_id = input_data_all['params']['vpnName']
     if app_id not in inv_data:
         log.error ('Application ID: {} not found in inventory'.format(app_id))
         # print list of keys in the inventory
