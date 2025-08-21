@@ -1,0 +1,41 @@
+# Solace router and access info for the application
+
+---
+inventory:
+    # For password from env, the variable read is:
+    # SEMP_PASSWORD_<host>_<sempUser> all in uppercase
+    # Eg: SEMP_PASSWORD_localhost_admin
+
+    # env is not currently used.
+    # all hosts in the inventory file are in the same environment
+    environment: "test"
+    hosts:
+    # name is a unique string across all inventory files
+    # this will be used in the input/default.yaml file to reference the host
+    - name: "default-local"
+      host: "localhost"
+      sempUrl: "http://localhost:8080"
+      sempUser: "admin"
+      #sempPassword: "secret" # read from env
+      vpn: "default"
+
+    - name: "TestVPN1-local"
+      host: "localhost"
+      sempUrl: "http://localhost:8088"
+      sempUser: "admin"
+      #sempPassword: "secret" # read from env
+      vpn: "TestVPN1"
+
+    - name: "TestVPN2-local"
+      host: "localhost"
+      sempUrl: "http://localhost:8088"
+      sempUser: "admin"
+      #sempPassword: "secret" # read from env
+      vpn: "TestVPN2"
+
+    - name: "nram-remote"
+      host: "nram-latitude"
+      sempUrl: "http://nram-latitude:8080"
+      sempUser: "admin"
+      #sempPassword: "secret" # read from env
+      vpn: "default"
