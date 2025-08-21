@@ -1,11 +1,9 @@
 vpnName,queueName,maxBindCount,maxMsgSpoolUsage,owner,subscriptions,redeliveryEnabled
-TestVPN2-local,csv-testq1,100,2000,nram-test-user1,"test/topic/2/hello,test/topic/2/world",true
-TestVPN2-local,csv-testq2,100,2000,nram-test-user1,"test/topic/2/hello,test/topic/2/world",true
-TestVPN1-local,csv-testq3,,,,"test/topic/2/hello,test/topic/2/world",
-TestVPN2-local,csv-testq4,,,,,false 
-TestVPN1-local,csv-testq5,,,,,false 
-TestVPN2-local,csv-testq6,,,,,false 
-TestVPN1-local,csv-testq7,,,,,false 
-TestVPN2-local,csv-testq8,,,,,false 
+nram-prod1-gke,csv-testq1,100,2000,nram-test-user1,"test/topic/2/hello,test/topic/2/world",true
+nram-prod1-gke,csv-testq2,100,2000,nram-test-user1,"test/topic/2/hello,test/topic/2/world",true
+nram-prod1-gke,csv-testq3,,,,"test/topic/2/hello,test/topic/2/world",
+nram-prod1-gke,csv-testq4,,,,,false 
+nram-prod1-gke,csv-testq5,,,,,false 
+nram-prod1-gke,csv-testq6,,,,,false 
 TestVPN1-local,csv-testq9,,,,,false 
 ,csv-testq10,,,,,false 
