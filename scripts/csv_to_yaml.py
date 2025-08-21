@@ -4,10 +4,10 @@ CSV to YAML Converter for Solace Configuration
 Reads CSV files and generates YAML output similar to nram-test.yaml
 
 Usage:
-    python csv_to_yaml.py --tla-name <tla-name> --verbose <true|false> --csv-file <path/to/csv>
+    python csv_to_yaml.py --verbose <true|false> --csv-file <path/to/csv>
     
 Example:
-    python csv_to_yaml.py --tla-name sys2vpn45 --verbose true --csv-file input/csv/queues.csv
+    python csv_to_yaml.py --verbose true --csv-file input/csv/queues.csv
     # Output: input/yaml/queues.yaml
 """
 
@@ -181,8 +181,62 @@ class CSVToYAMLConverter:
         
         return merged_objects
     
-    def generate_yaml_output(self, tla_name: str, verbose: bool, csv_file: str) -> Dict[str, Any]:
-        """Generate YAML output structure"""
+    def validate_and_filter_vpn_names(self, objects: List[Dict[str, Any]]) -> tuple[str, List[Dict[str, Any]]]:
+        """Validate vpn-names and filter objects with consistent vpn-name"""
+        if not objects:
+            raise ValueError("No objects to process")
+        
+        # Get vpn-name from first record
+        if 'vpn-name' not in objects[0]:
+            raise ValueError("vpn-name column not found in CSV file")
+        
+        target_vpn_name = objects[0]['vpn-name']
+        if not target_vpn_name or target_vpn_name.strip() == '':
+            raise ValueError("vpn-name in first record is empty")
+        
+        valid_objects = []
+        skipped_count = 0
+        missing_vpn_count = 0
+        
+        for i, obj in enumerate(objects):
+            current_vpn_name = None
+            
+            # Handle missing vpn-name column or empty value
+            if 'vpn-name' not in obj or not obj['vpn-name'] or obj['vpn-name'].strip() == '':
+                # Use vpn-name from first record
+                current_vpn_name = target_vpn_name
+                missing_vpn_count += 1
+                if self.verbose:
+                    self.log(f"Record {i+1}: Using vpn-name '{target_vpn_name}' from first record (missing/empty)")
+            else:
+                current_vpn_name = obj['vpn-name']
+            
+            # Check if vpn-name matches the target
+            if current_vpn_name != target_vpn_name:
+                self.log(f"Warning: Record {i+1} has vpn-name '{current_vpn_name}' but expected '{target_vpn_name}', skipping")
+                skipped_count += 1
+                continue
+            
+            # Create a copy without vpn-name for the object configuration
+            obj_copy = obj.copy()
+            if 'vpn-name' in obj_copy:
+                del obj_copy['vpn-name']
+            valid_objects.append(obj_copy)
+        
+        if missing_vpn_count > 0:
+            self.log(f"Applied default vpn-name '{target_vpn_name}' to {missing_vpn_count} records with missing/empty vpn-name")
+        
+        if skipped_count > 0:
+            self.log(f"Skipped {skipped_count} records due to vpn-name mismatch")
+        
+        if not valid_objects:
+            raise ValueError(f"No valid records found for vpn-name '{target_vpn_name}'")
+        
+        self.log(f"Processing {len(valid_objects)} records for vpn-name '{target_vpn_name}'")
+        return target_vpn_name, valid_objects
+    
+    def generate_yaml_output(self, verbose: bool, csv_file: str) -> Dict[str, Any]:
+        """Generate YAML output structure with vpn-name validation"""
         
         # Determine object type from CSV filename
         object_type = self.get_object_type_from_filename(csv_file)
@@ -194,22 +248,28 @@ class CSVToYAMLConverter:
         # Read CSV data
         objects = self.read_csv_file(csv_file)
         
+        if not objects:
+            raise ValueError(f"No data found in CSV file: {csv_file}")
+        
+        # Validate and filter objects by vpn-name
+        vpn_name, valid_objects = self.validate_and_filter_vpn_names(objects)
+        
         # Read defaults
         defaults = self.read_defaults(object_type)
         
         # Merge with defaults
         if defaults:
-            objects = self.merge_with_defaults(objects, defaults)
+            valid_objects = self.merge_with_defaults(valid_objects, defaults)
         
         # Build the output structure
         output = {
             'params': {
-                'tla-name': tla_name,
+                'vpn-name': vpn_name,
                 'verbose': verbose,
                 'create': [object_type]
             },
             'inputs': {
-                object_type: objects
+                object_type: valid_objects
             },
             'defaults': {},
             'system': {
@@ -222,6 +282,7 @@ class CSVToYAMLConverter:
             output['defaults'][object_type] = defaults
         
         return output
+        
     
     def save_yaml_file(self, output: Dict[str, Any], output_file: str):
         """Save output to YAML file"""
@@ -240,7 +301,7 @@ class CSVToYAMLConverter:
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(description='Convert CSV files to YAML configuration')
-    parser.add_argument('--tla-name', required=True, help='TLA name (e.g., sys2vpn45)')
+    # TLA name is now read from CSV file, no longer a command line argument
     parser.add_argument('--verbose', '-v', action='count', default=0,
                        help='Verbose output. Use -vvv for more verbose output')
     parser.add_argument('--csv-file', required=True, help='Path to CSV file')
@@ -260,7 +321,6 @@ def main():
     try:
         # Generate YAML output
         output = converter.generate_yaml_output(
-            tla_name=args.tla_name,
             verbose=verbose,
             csv_file=args.csv_file
         )

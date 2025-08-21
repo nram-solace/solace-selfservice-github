@@ -4,10 +4,10 @@
 # Takes absolute path of CSV file, converts to YAML, and processes with yaml_to_semp
 #
 # Usage:
-#     ./scripts/solace_self_service.sh --csv-file /absolute/path/to/file.csv --tla-name <tla-name> [--verbose]
+#     ./scripts/solace_self_service.sh --csv-file /absolute/path/to/file.csv [--verbose]
 #
 # Example:
-#     ./scripts/solace_self_service.sh --csv-file /workspace/input/csv/queues.csv --tla-name sys2vpn45 --verbose
+#     ./scripts/solace_self_service.sh --csv-file /workspace/input/csv/queues.csv --verbose
 #
 
 set -e  # Exit on any error
@@ -53,7 +53,6 @@ warning() {
 
 # Parse command line arguments
 CSV_FILE=""
-TLA_NAME=""
 VERBOSE=false
 
 while [[ $# -gt 0 ]]; do
@@ -62,26 +61,23 @@ while [[ $# -gt 0 ]]; do
             CSV_FILE="$2"
             shift 2
             ;;
-        --tla-name)
-            TLA_NAME="$2"
-            shift 2
-            ;;
         --verbose)
             VERBOSE=true
             shift
             ;;
         -h|--help)
-            echo "Usage: $0 --csv-file <csv-file> --tla-name <tla-name> [--verbose]"
+            echo "Usage: $0 --csv-file <csv-file> [--verbose]"
             echo ""
             echo "Arguments:"
-            echo "  --csv-file    Absolute path to CSV file to process"
-            echo "  --tla-name    TLA name (e.g., sys2vpn45, nram-local)"
+            echo "  --csv-file    Absolute path to CSV file to process (must contain vpn-name column)"
             echo "  --verbose     Enable verbose output"
             echo "  -h, --help    Show this help message"
             echo ""
             echo "Examples:"
-            echo "  $0 --csv-file /workspace/input/csv/queues.csv --tla-name sys2vpn45"
-            echo "  $0 --csv-file /workspace/input/csv/client-profiles.csv --tla-name nram-local --verbose"
+            echo "  $0 --csv-file /workspace/input/csv/queues.csv"
+            echo "  $0 --csv-file /workspace/input/csv/client-profiles.csv --verbose"
+            echo ""
+            echo "Note: The CSV file must contain a 'vpn-name' column to identify the target environment."
             exit 0
             ;;
         *)
@@ -98,10 +94,6 @@ if [[ -z "$CSV_FILE" ]]; then
     exit 1
 fi
 
-if [[ -z "$TLA_NAME" ]]; then
-    error "TLA name is required. Use --tla-name <name>"
-    exit 1
-fi
 
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -123,7 +115,6 @@ fi
 
 log "Version $VERSION"
 log "Processing CSV file: $CSV_FILE"
-log "TLA name: $TLA_NAME"
 log "Project root: $PROJECT_ROOT"
 
 # Step 1: Convert CSV to YAML
@@ -131,7 +122,6 @@ log "Step 1: Converting CSV to YAML..."
 
 CSV_TO_YAML_CMD=(
     python3 "$SCRIPT_DIR/csv_to_yaml.py"
-    --tla-name "$TLA_NAME"
     --csv-file "$CSV_FILE"
 )
 
@@ -163,7 +153,7 @@ fi
 log "Generated YAML file: $YAML_FILE"
 
 # Step 3: Process with solace-service-manager
-log "Step 2: Processing with solace-service-manager..."
+log "Step 3: Processing with solace-service-manager..."
 
 SOLACE_CMD=(
     python3 "$SCRIPT_DIR/yaml_to_semp.py"
