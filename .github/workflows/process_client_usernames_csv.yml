@@ -44,7 +44,8 @@ jobs:
           #export https_proxy=$HTTPS_PROXY
           #echo "http_proxy set to $http_proxy"
           bash scripts/solace_self_service.sh --csv-file $CSV_FILE_ACL_PROFILE --verbose
-          bash scripts/solace_self_service.sh --csv-file $CSV_FILE_CLIENT_PROFILE --verbose
+          #disable for cloud
+          #bash scripts/solace_self_service.sh --csv-file $CSV_FILE_CLIENT_PROFILE --verbose
           bash scripts/solace_self_service.sh --csv-file $CSV_FILE_CLIENT_USERS --verbose
         env:
           #SEMP_USER: ${{ vars.SEMP_USER }}
