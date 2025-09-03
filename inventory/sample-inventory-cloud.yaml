@@ -9,7 +9,7 @@ inventory:
     # name is a unique string across all inventory files
     # host is used for logging and is not used for the sempUrl
     # name is used in the input/csv/queues.csv in the first column (vpnName)
-    - name: "nram-prod1-gke"
+    - name: "nram-prod1"
       host: "nram-gke-poc"
       sempUrl: "https://mr-connection-ipvocjircbz.messaging.solace.cloud:943"
       sempUser: "nram-prod1-admin"
