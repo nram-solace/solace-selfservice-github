@@ -1,9 +1,4 @@
-vpnName,queueName,maxBindCount,maxMsgSpoolUsage,owner,subscriptions,redeliveryEnabled
-nram-prod1-gke,csv-testq1,100,2000,nram-test-user1,"test/topic/2/hello,test/topic/2/world",true
-nram-prod1-gke,csv-testq2,100,2000,nram-test-user1,"test/topic/2/hello,test/topic/2/world",true
-nram-prod1-gke,csv-testq3,,,,"test/topic/2/hello,test/topic/2/world",
-nram-prod1-gke,csv-testq4,,,,,false 
-nram-prod1-gke,csv-testq5,,,,,false 
-nram-prod1-gke,csv-testq6,,,,,false 
-TestVPN1-local,csv-testq9,,,,,false 
-,csv-testq10,,,,,false 
+inventoryKey,queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,deliveryCountEnabled,subscriptions
+nram-prod1,csv-test1,1000,exclusive,consume,default,true,true,test/1
+nram-prod1,csv-test2,2000,non-exclusive,read-only,default,false,true,"test/>,test2/*"
+nram-prod1,csv-test3,3000,exclusive,consume,default,true,false,"test3/*"
