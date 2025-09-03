@@ -15,11 +15,11 @@
 #
 # Ramesh Natarajan (nram), Solace PSG (ramesh.natarajan@solace.com)
 ########################################################################
-me = "yaml-to-semp"
-ver = '2.4.1-250821'
+me = "yaml_to_semp"
+VERSION = "2.5.0-250902"
 
 # Script configuration
-SCRIPT_PREFIX = "[YAML to SEMP]"
+SCRIPT_PREFIX = "YAML_to_SEMP"
 
 # Colors for output
 CYAN = '\033[0;36m'
@@ -63,18 +63,19 @@ def main(argv):
                 help='Verbose output. use -vvv for tracing')
     r = p.parse_args()
 
-    print ('{}{}{} {}-{} Starting {} args: {}\n'.format(CYAN, SCRIPT_PREFIX, NC, me,ver, sys.argv[0], str(sys.argv[1:])))
+    print ('{}[{}] Starting {} {}\n'.format(CYAN, SCRIPT_PREFIX, NC, me, VERSION))
 
-    if r.verbose:    
-        print ("{}{}{} http proxy: ".format(CYAN, SCRIPT_PREFIX, NC), os.environ.get('http_proxy'))
-        print ("{}{}{} Python version: ".format(CYAN, SCRIPT_PREFIX, NC), sys.version)
-    
+    if r.verbose:
+        print ('{}[{}]{} COMMAND: {} VERSION: {} ARGS: {}'.format(CYAN, SCRIPT_PREFIX, NC,  sys.argv[0], VERSION, str(sys.argv[1:])))
+        print ("{}[{}]{} http proxy: ".format(CYAN, SCRIPT_PREFIX, NC), os.environ.get('http_proxy'))
+        print ("{}[{}]{} Python version: ".format(CYAN, SCRIPT_PREFIX, NC), sys.version)
+
     # check if input file exists
     if not os.path.exists(r.input_file):
-        print ('{}{}{} ERROR: input file {} not found'.format(CYAN, SCRIPT_PREFIX, NC, r.input_file))
+        print ('{}[{}]{} ERROR: input file {} not found'.format(CYAN, SCRIPT_PREFIX, NC, r.input_file))
         sys.exit(1)
-        
-    print ("{}{}{} Reading input file: {}".format(CYAN, SCRIPT_PREFIX, NC, r.input_file))
+
+    print ("{}[{}]{} Reading input file: {}".format(CYAN, SCRIPT_PREFIX, NC, r.input_file))
     yaml_h = YamlHandler.YamlHandler()
     input_data_all = yaml_h.read_config_file(r.input_file)
     #if r.verbose:
@@ -82,7 +83,7 @@ def main(argv):
     input_data = input_data_all['inputs']   
     
     sys_cfg_file = input_data_all['system']['configFile']
-    print ("{}{}{} Reading system config file: {}".format(CYAN, SCRIPT_PREFIX, NC, sys_cfg_file))
+    print ("{}[{}]{} Reading system config file: {}".format(CYAN, SCRIPT_PREFIX, NC, sys_cfg_file))
 
     system_config_all = yaml_h.read_config_file (sys_cfg_file)
     system_cfg = system_config_all['system']
@@ -151,11 +152,11 @@ def main(argv):
     cfg['log_handler'] = log_h
 
     # Read the inventory file
-    print ('{}{}{} Reading inventory from {}/ folder'.format(CYAN, SCRIPT_PREFIX, NC, system_cfg['inventoryDir']))
+    print ('{}[{}]{} Reading inventory from {}/ folder'.format(CYAN, SCRIPT_PREFIX, NC, system_cfg['inventoryDir']))
     inv = Inventory.Inventory(cfg, r.verbose)
     inv_data = inv.read_inventory_dir(system_cfg['inventoryDir'])
-    
-    log.info ('Starting {}-{}'.format(me, ver))
+
+    log.info ('Starting {}-{}'.format(me, VERSION))
     log.info ('SYSTEM CONFIG : {}'.format(json.dumps(system_config_all, indent=2)))
     log.info ('USER INPUT    : {}'.format(json.dumps(input_data_all, indent=2)))
     log.info ('INVENTORY     : {} hosts'.format(len(inv_data)))
@@ -197,7 +198,7 @@ def main(argv):
     if 'create' in run_params and run_params['create'] is not None:
         for entry in run_params['create']:
             print ('\n')
-            log.notice ('[{} {}] Processing create {}'.format(SCRIPT_PREFIX, entry.upper(), entry))
+            log.notice ('[{}]:{} Processing create {}'.format(SCRIPT_PREFIX, entry.upper(), entry))
             if entry not in input_data:
                 log.warning ('No {} entry in input file'.format(entry))
                 continue
@@ -226,7 +227,7 @@ def main(argv):
     if 'delete' in run_params and run_params['delete'] is not None:
         for entry in run_params['delete']:
             print ('\n')
-            log.notice ('[{} {}] Processing delete {}'.format(SCRIPT_PREFIX, entry.upper(), entry))
+            log.notice ('[{}]:{} Processing delete {}'.format(SCRIPT_PREFIX, entry.upper(), entry))
             if entry == 'dmqueues':
                 queue_h.delete_queues (input_data['dmqueues'])
             if entry == 'queues':
@@ -242,7 +243,7 @@ def main(argv):
                 cluser_h.delete_client_usernames (input_data['client-usernames'])
 
                 
-    log.info ('{}-{} Done'.format(me, ver))
+    log.info ('{}-{} Done'.format(me, VERSION))
     
 # Program entry point
 if __name__ == "__main__":
