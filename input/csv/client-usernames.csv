@@ -1,5 +1,5 @@
 inventoryKey,clientUsername,aclProfileName,clientProfileName
-nram-prod1,csv-test-user1,csv-test-acl1,csv-test-cp1
-nram-prod1,csv-test-user2,csv-test-acl2,csv-test-cp2
+nram-prod1,csv-test-user1,csv-test-acl1,
+nram-prod1,csv-test-user2,csv-test-acl2,
 nram-prod1,csv-test-user3,, 
 
