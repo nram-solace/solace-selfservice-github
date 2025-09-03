@@ -1,4 +1,4 @@
 inventoryKey,clientUsername,aclProfileName,clientProfileName,enabled
 nram-prod1,csv-test-user1,csv-test-acl1,,true
 nram-prod1,csv-test-user2,csv-test-acl2,,true
-nram-prod1,csv-test-user3,,,
+nram-prod1,csv-test-user4,,,
