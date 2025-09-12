@@ -1,9 +1,9 @@
-name: Post on Change
+name: Post on Change - UNUSED
 
 on:
   push:
     paths:
-      - 'input/**'
+      - 'input/unused/**'
 
 jobs:
   solace_service_job:
