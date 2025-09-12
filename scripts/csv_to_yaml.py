@@ -188,8 +188,9 @@ class CSVToYAMLConverter:
         if ',' in value:
             return [item.strip() for item in value.split(',') if item.strip()]
         
-        # Handle subscriptions field - always return as list even for single values
-        if field_name and field_name.lower() == 'subscriptions':
+        # Handle fields that should always be lists even for single values
+        list_fields = ['subscriptions', 'clientconnectexceptions', 'publishtopicexceptions', 'subscribetopicexceptions']
+        if field_name and field_name.lower() in list_fields:
             return [value]
         
         # Handle boolean values
