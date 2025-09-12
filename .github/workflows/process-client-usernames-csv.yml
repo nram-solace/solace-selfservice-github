@@ -33,7 +33,7 @@ jobs:
         # SEMP_PASSWORD : SEMP_PASSWORD environment variable
       - name: Set up environment variables
         run: |
-          echo "CSV_FILE_USERS=input/csv/client-usernames.csv" >> $GITHUB_ENV
+          echo "CSV_FILE_CLIENT_USERS=input/csv/client-usernames.csv" >> $GITHUB_ENV
           echo "CSV_FILE_ACL_PROFILE=input/csv/acl-profiles.csv" >> $GITHUB_ENV
           echo "CSV_FILE_CLIENT_PROFILE=input/csv/client-profiles.csv" >> $GITHUB_ENV
 
@@ -44,7 +44,8 @@ jobs:
           #export https_proxy=$HTTPS_PROXY
           #echo "http_proxy set to $http_proxy"
           bash scripts/solace_self_service.sh --csv-file $CSV_FILE_ACL_PROFILE --verbose
-          bash scripts/solace_self_service.sh --csv-file $CSV_FILE_CLIENT_PROFILE --verbose
+          #disable for cloud
+          #bash scripts/solace_self_service.sh --csv-file $CSV_FILE_CLIENT_PROFILE --verbose
           bash scripts/solace_self_service.sh --csv-file $CSV_FILE_CLIENT_USERS --verbose
         env:
           #SEMP_USER: ${{ vars.SEMP_USER }}
