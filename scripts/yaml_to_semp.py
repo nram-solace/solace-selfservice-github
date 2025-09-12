@@ -176,12 +176,13 @@ def main(argv):
 
 
     cfg['router'] = router
+    cfg['router']['sempPassword'] = os.environ.get('SEMP_PASSWORD')
+
     if 'sempPassword' not in router:
         log.error ('sempPassword not set in config nor found in inventory for {}'.format(app_id))
-        log.info('Check the environment variable: {}'.format(router['SEMP_PASSWORD_ENV_VAR']))
-        sys.exit(1)
+        log.info('Check the environment variable: {}'.format('SEMP_PASSWORD'))
+        #sys.exit(1)
         
-    #cfg['router']['sempPassword'] = os.environ.get('SEMP_PASSWORD')
 
     # create semp handler -- see common/SimpleSempHandler.py
     semp_h = SempHandler.SempHandler(cfg, verbose)

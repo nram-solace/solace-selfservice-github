@@ -5,3 +5,7 @@ input/nram/**
 logs/**
 env.sh
 input/default.yaml
+.claude/settings.local.json
+.gitignore
+input/yaml/queues.yaml
+CLAUDE.md

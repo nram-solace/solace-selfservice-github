@@ -1,6 +1,6 @@
 params:
-  tla-name: nram-local
-  verbose: false
+  vpnName: default
+  verbose: true
   create:
   - acl-profiles
 inputs:
@@ -12,10 +12,12 @@ inputs:
     clientConnectExceptions:
     - 10.10.0.0/24
     - 10.20.0.0/24
+    msgVpnName: default
   - clientConnectDefaultAction: disallow
     publishTopicDefaultAction: allow
     subscribeTopicDefaultAction: allow
     aclProfileName: csv-test-acl2
+    msgVpnName: default
 defaults:
   acl-profiles:
     clientConnectDefaultAction: disallow
