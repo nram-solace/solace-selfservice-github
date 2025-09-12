@@ -16,7 +16,7 @@
 # Ramesh Natarajan (nram), Solace PSG (ramesh.natarajan@solace.com)
 ########################################################################
 me = "yaml_to_semp"
-VERSION = "2.5.0-250902"
+VERSION = "2.5.1-250912"
 
 # Script configuration
 SCRIPT_PREFIX = "YAML_to_SEMP"
