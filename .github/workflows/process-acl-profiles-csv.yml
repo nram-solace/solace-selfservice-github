@@ -1,4 +1,4 @@
-name: Post on Change
+name: Post on Change - ACL Profiles
 
 on:
   push:
