@@ -1,4 +1,4 @@
 inventoryKey,queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,deliveryCountEnabled,subscriptions
-nram-prod1,csv-test1,1000,exclusive,consume,default,true,true,test/1
-nram-prod1,csv-test2,2000,non-exclusive,read-only,default,false,true,"test/>,test2/*"
-nram-prod1,csv-test3,3000,exclusive,consume,default,true,false,"test3/*"
+nram-prod1,git-test1,1000,exclusive,consume,default,true,true,test/3
+nram-prod1,git-test2,2000,non-exclusive,read-only,default,false,true,"test/>,test2/*"
+nram-prod1,git-test3,3000,exclusive,consume,default,true,false,"test3/*"
