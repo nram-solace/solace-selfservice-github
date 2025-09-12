@@ -14,7 +14,7 @@ set -e  # Exit on any error
 
 # Script configuration
 SCRIPT_PREFIX="Solace_Self_Service"
-VERSION="2.5.0-250902"
+VERSION="2.5.1-250912"
 
 # Colors for output
 RED='\033[0;31m'
