@@ -3,7 +3,7 @@ name: Post on Change
 on:
   push:
     paths:
-      - 'input/**'
+      - 'input/csv/queues.csv'
 
 jobs:
   solace_service_job:
