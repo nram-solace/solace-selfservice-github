@@ -64,3 +64,40 @@ skipTags:
 
   publishTopicExceptionSyntax:
     - smf
+
+valid-tags:
+  queues:
+    - accessType
+    - deliveryCountEnabled
+    - maxMsgSpoolUsage
+    - msgVpnName
+    - permission
+    - queueName
+    - redeliveryEnabled
+    - subscriptions
+    - owner
+    # - consumerAckPropagationEnabled
+    # - deadMsgQueue
+    # - deliveryDelay
+    # - egressEnabled
+    # - eventBindCountThreshold
+    # - eventMsgSpoolUsageThreshold
+    # - eventRejectLowPriorityMsgLimitThreshold
+    # - ingressEnabled
+    # - maxBindCount
+    # - maxDeliveredUnackedMsgsPerFlow
+    # - maxMsgSize
+    # - maxRedeliveryCount
+    # - maxTtl
+    # - partitionCount
+    # - partitionRebalanceDelay
+    # - partitionRebalanceMaxHandoffTime
+    # - redeliveryDelayEnabled
+    # - redeliveryDelayInitialInterval
+    # - redeliveryDelayMaxInterval
+    # - redeliveryDelayMultiplier
+    # - rejectLowPriorityMsgEnabled
+    # - rejectLowPriorityMsgLimit
+    # - rejectMsgToSenderOnDiscardBehavior
+    # - respectMsgPriorityEnabled
+    # - respectTtlEnabled
