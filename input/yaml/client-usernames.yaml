@@ -1,6 +1,6 @@
 params:
-  tla-name: nram-local
-  verbose: false
+  vpnName: default
+  verbose: true
   create:
   - client-usernames
 inputs:
@@ -8,33 +8,15 @@ inputs:
   - clientProfileName: csv-test-cp1
     aclProfileName: csv-test-acl1
     clientUsername: csv-test-user1
+    msgVpnName: default
   - clientProfileName: csv-test-cp2
     aclProfileName: csv-test-acl2
     clientUsername: csv-test-user2
+    msgVpnName: default
   - clientProfileName: default
     aclProfileName: default
     clientUsername: csv-test-user3
-  - clientProfileName: default
-    aclProfileName: default
-    clientUsername: csv-test-user4
-  - clientProfileName: default
-    aclProfileName: default
-    clientUsername: csv-test-user5
-  - clientProfileName: default
-    aclProfileName: default
-    clientUsername: csv-test-user6
-  - clientProfileName: default
-    aclProfileName: default
-    clientUsername: csv-test-user7
-  - clientProfileName: default
-    aclProfileName: default
-    clientUsername: csv-test-user8
-  - clientProfileName: default
-    aclProfileName: default
-    clientUsername: csv-test-user9
-  - clientProfileName: default
-    aclProfileName: default
-    clientUsername: csv-test-user10
+    msgVpnName: default
 defaults:
   client-usernames:
     clientProfileName: default

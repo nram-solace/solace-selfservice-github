@@ -160,7 +160,24 @@ class CSVToYAMLConverter:
         if isinstance(value, list):
             if not value or (len(value) == 1 and not value[0].strip()):
                 return None
+            # Check if this is a list of single characters (indicating string was incorrectly split)
+            if all(isinstance(item, str) and len(item) == 1 for item in value):
+                # This looks like a string that was split into characters, join it back
+                joined_value = ''.join(value)
+                if self.verbose:
+                    self.log(f"Detected character list, joining to: '{joined_value}'")
+                # Recursively parse the joined value
+                return self.parse_csv_value(joined_value)
+            # If it's a list with a single string element, extract it
+            if len(value) == 1 and isinstance(value[0], str):
+                if self.verbose:
+                    self.log(f"Extracting single string from list: '{value[0]}'")
+                return self.parse_csv_value(value[0])
             return value
+        
+        # Ensure value is a string
+        if not isinstance(value, str):
+            value = str(value)
         
         if not value or value.strip() == '':
             return None
@@ -171,8 +188,9 @@ class CSVToYAMLConverter:
         if ',' in value:
             return [item.strip() for item in value.split(',') if item.strip()]
         
-        # Handle subscriptions field - always return as list even for single values
-        if field_name and field_name.lower() == 'subscriptions':
+        # Handle fields that should always be lists even for single values
+        list_fields = ['subscriptions', 'clientconnectexceptions', 'publishtopicexceptions', 'subscribetopicexceptions']
+        if field_name and field_name.lower() in list_fields:
             return [value]
         
         # Handle boolean values
@@ -244,6 +262,10 @@ class CSVToYAMLConverter:
                 parsed_row = {}
                 for key, value in row.items():
                     try:
+                        # Debug: Check what the CSV reader is actually returning
+                        if self.verbose:
+                            self.log(f"Raw CSV value for key '{key}': '{value}' (type: {type(value)}, repr: {repr(value)})")
+                        
                         parsed_value = self.parse_csv_value(value, key)
                         if parsed_value is not None:
                             parsed_row[key] = parsed_value

@@ -1,3 +1,3 @@
 inventoryKey,aclProfileName,clientConnectDefaultAction,clientConnectExceptions,publishTopicExceptions,subscribeTopicExceptions
-nram-prod1,csv-test-acl1,disallow,"10.10.0.0/24,10.20.0.0/24",,
+nram-prod1,csv-test-acl1,disallow,"10.10.0.0/24,10.20.0.0/24","test/topic/pub/1","test/topic/sub/3,test/topic/sub/4"
 nram-prod1,csv-test-acl2,,,,

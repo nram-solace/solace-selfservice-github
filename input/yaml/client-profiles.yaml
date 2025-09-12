@@ -1,6 +1,6 @@
 params:
-  tla-name: nram-local
-  verbose: false
+  vpnName: default
+  verbose: true
   create:
   - client-profiles
 inputs:
@@ -15,6 +15,7 @@ inputs:
     maxEgressFlowCount: 100
     maxIngressFlowCount: 100
     clientProfileName: csv-test-cp1
+    msgVpnName: default
   - allowBridgeConnectionsEnabled: false
     allowGuaranteedEndpointCreateEnabled: false
     allowGuaranteedMsgReceiveEnabled: true
@@ -25,6 +26,7 @@ inputs:
     maxEgressFlowCount: 100
     maxIngressFlowCount: 100
     clientProfileName: csv-test-cp2
+    msgVpnName: default
 defaults:
   client-profiles:
     allowBridgeConnectionsEnabled: false
