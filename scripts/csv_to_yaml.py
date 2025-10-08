@@ -265,9 +265,12 @@ class CSVToYAMLConverter:
                         # Debug: Check what the CSV reader is actually returning
                         if self.verbose:
                             self.log(f"Raw CSV value for key '{key}': '{value}' (type: {type(value)}, repr: {repr(value)})")
-                        
+
                         parsed_value = self.parse_csv_value(value, key)
-                        if parsed_value is not None:
+                        # Special handling for jndiQueueName - preserve empty string to indicate "no JNDI"
+                        if key == 'jndiQueueName':
+                            parsed_row[key] = parsed_value if parsed_value is not None else ''
+                        elif parsed_value is not None:
                             parsed_row[key] = parsed_value
                     except Exception as e:
                         self.log(f"Error parsing value '{value}' for key '{key}': {e}")
