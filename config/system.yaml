@@ -76,6 +76,7 @@ valid-tags:
     - redeliveryEnabled
     - subscriptions
     - owner
+    - jndiQueueName
     # - consumerAckPropagationEnabled
     # - deadMsgQueue
     # - deliveryDelay

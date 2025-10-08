@@ -117,8 +117,8 @@ class Queues():
             semp_data['queueName'] = entry_name
             semp_data['msgVpnName'] = msg_vpn_name
             for k in input_data:
-                # skip subscriptions
-                if k == 'subscriptions':
+                # skip subscriptions and jndiQueueName (not valid SEMP queue attributes)
+                if k in ['subscriptions', 'jndiQueueName']:
                     continue
                 semp_data[k] = input_data[k]
             # enable queues
@@ -143,10 +143,30 @@ class Queues():
                 continue
             if 'subscriptions' in input_data:
                 self.add_topic_subscriptions(entry_name, input_data['subscriptions'])
-            jndi_name = f'Q_{entry_name}'
-            # replace "." with _ 
-            jndi_name = jndi_name.replace('.', '_')
-            self.add_jndi_queue (entry_name, jndi_name)
+
+            # Handle JNDI mapping based on jndiQueueName field
+            if 'jndiQueueName' in input_data:
+                jndi_queue_name = input_data['jndiQueueName']
+                if jndi_queue_name is None or str(jndi_queue_name).strip() == '':
+                    # Empty value - skip JNDI mapping
+                    log.info (f'No JNDI mapping specified for queue {entry_name}, skipping JNDI creation')
+                elif str(jndi_queue_name).upper() == 'AUTO':
+                    # AUTO - use auto-generated JNDI name
+                    jndi_name = f'Q_{entry_name}'
+                    jndi_name = jndi_name.replace('.', '_')
+                    log.info (f'Using auto-generated JNDI name {jndi_name} for queue {entry_name}')
+                    self.add_jndi_queue (entry_name, jndi_name)
+                else:
+                    # Custom JNDI name provided
+                    jndi_name = str(jndi_queue_name)
+                    log.info (f'Using custom JNDI name {jndi_name} for queue {entry_name}')
+                    self.add_jndi_queue (entry_name, jndi_name)
+            else:
+                # No jndiQueueName field - use legacy auto-generation for backward compatibility
+                jndi_name = f'Q_{entry_name}'
+                jndi_name = jndi_name.replace('.', '_')
+                log.info (f'No jndiQueueName field found, using auto-generated JNDI name {jndi_name} for queue {entry_name}')
+                self.add_jndi_queue (entry_name, jndi_name)
     
     #--------------------------------------------------------------------
     # delete queues
@@ -186,10 +206,30 @@ class Queues():
                 log.warning (f'Delete Queue {queue_name} failed {resp}')
             else:
                 log.status (f'Queue {queue_name} deleted')
-            jndi_name = f'Q_{queue_name}'
-            # replace "." with _ 
-            jndi_name = jndi_name.replace('.', '_')
-            self.delete_jndi_queue (jndi_name)
+
+            # Handle JNDI deletion based on jndiQueueName field
+            if 'jndiQueueName' in q_data:
+                jndi_queue_name = q_data['jndiQueueName']
+                if jndi_queue_name is None or str(jndi_queue_name).strip() == '':
+                    # Empty value - skip JNDI deletion
+                    log.info (f'No JNDI mapping specified for queue {queue_name}, skipping JNDI deletion')
+                elif str(jndi_queue_name).upper() == 'AUTO':
+                    # AUTO - use auto-generated JNDI name
+                    jndi_name = f'Q_{queue_name}'
+                    jndi_name = jndi_name.replace('.', '_')
+                    log.info (f'Deleting auto-generated JNDI name {jndi_name} for queue {queue_name}')
+                    self.delete_jndi_queue (jndi_name)
+                else:
+                    # Custom JNDI name provided
+                    jndi_name = str(jndi_queue_name)
+                    log.info (f'Deleting custom JNDI name {jndi_name} for queue {queue_name}')
+                    self.delete_jndi_queue (jndi_name)
+            else:
+                # No jndiQueueName field - use legacy auto-generation for backward compatibility
+                jndi_name = f'Q_{queue_name}'
+                jndi_name = jndi_name.replace('.', '_')
+                log.info (f'No jndiQueueName field found, deleting auto-generated JNDI name {jndi_name} for queue {queue_name}')
+                self.delete_jndi_queue (jndi_name)
         
     
     #--------------------------------------------------------------------
