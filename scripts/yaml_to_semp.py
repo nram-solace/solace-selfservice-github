@@ -16,7 +16,7 @@
 # Ramesh Natarajan (nram), Solace PSG (ramesh.natarajan@solace.com)
 ########################################################################
 me = "yaml_to_semp"
-VERSION = "2.5.1-250912"
+VERSION = "2.5.2-1009"
 
 # Script configuration
 SCRIPT_PREFIX = "YAML_to_SEMP"
@@ -177,6 +177,8 @@ def main(argv):
 
     cfg['router'] = router
     cfg['router']['sempPassword'] = os.environ.get('SEMP_PASSWORD')
+
+    #print ('sempPassword: {}'.format(cfg['router']['sempPassword']))
 
     if 'sempPassword' not in router:
         log.error ('sempPassword not set in config nor found in inventory for {}'.format(app_id))
