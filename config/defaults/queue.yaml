@@ -12,4 +12,5 @@ owner: "default"
 permission: "no-access"
 redeliveryEnabled: true
 respectTtlEnabled: true
-deliveryCountEnabled: true 
+deliveryCountEnabled: true
+maxRedeliveryCount: 0

@@ -77,6 +77,7 @@ valid-tags:
     - subscriptions
     - owner
     - jndiQueueName
+    - maxRedeliveryCount
     # - consumerAckPropagationEnabled
     # - deadMsgQueue
     # - deliveryDelay
