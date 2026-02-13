@@ -1,0 +1,5 @@
+env,queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
+uat,team1-dev-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team1/dev/orders/>
+uat,team1-dev-queue2,2000,non-exclusive,consume,default,false,10,true,,"team1/dev/events/*,team1/dev/notifications/*"
+uat,team1-uat-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team1/uat/orders/>
+uat,team1-uat-queue2,2000,non-exclusive,consume,default,false,10,true,,"team1/uat/events/*,team1/uat/notifications/*"
