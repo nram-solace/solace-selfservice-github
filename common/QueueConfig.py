@@ -153,6 +153,7 @@ class Queues():
                 elif str(jndi_queue_name).upper() == 'AUTO':
                     # AUTO - use auto-generated JNDI name
                     jndi_name = f'Q_{entry_name}'
+            # replace "." with _ 
                     jndi_name = jndi_name.replace('.', '_')
                     log.info (f'Using auto-generated JNDI name {jndi_name} for queue {entry_name}')
                     self.add_jndi_queue (entry_name, jndi_name)
@@ -216,6 +217,7 @@ class Queues():
                 elif str(jndi_queue_name).upper() == 'AUTO':
                     # AUTO - use auto-generated JNDI name
                     jndi_name = f'Q_{queue_name}'
+            # replace "." with _ 
                     jndi_name = jndi_name.replace('.', '_')
                     log.info (f'Deleting auto-generated JNDI name {jndi_name} for queue {queue_name}')
                     self.delete_jndi_queue (jndi_name)

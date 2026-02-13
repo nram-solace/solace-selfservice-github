@@ -1,52 +1,78 @@
-name: Post on Change
+name: Process Queues CSV
 
 on:
   push:
     paths:
-      - 'input/csv/queues.csv'
+      - 'input/csv/**/queues.csv'
+      - 'input/csv/queues.csv'  # Backward compatibility (flat/legacy)
+  workflow_dispatch:
+    inputs:
+      csv_file:
+        description: 'Path to CSV file (e.g., input/csv/team1/queues.csv)'
+        required: true
+        default: 'input/csv/queues.csv'
 
 jobs:
-  solace_service_job:
+  process_queues:
     runs-on: ubuntu-latest
-    # for NT
-    #runs-on: [ self-hosted, enterprise, docker, Linux ]
-    #container:
-    #  image: ghcr.io/northerntrust-internal/ghe/python:3.9
+    name: Process Queues
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-  
-      - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/checkout@v4
         with:
-          python-version: 3.x
+          fetch-depth: 2  # Need previous commit for diff
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install datetime logging requests pathlib pyyaml 
-        
-      - name: Extract branch name
-        id: extract_branch_name
-        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+        run: pip install requests pyyaml
 
-        # CSV_FILE : input/csv/queues.csv
-        # SEMP_PASSWORD : SEMP_PASSWORD environment variable
-      - name: Set up environment variables
+      - name: Determine CSV file path
+        id: csv_path
         run: |
-          echo "CSV_FILE=input/csv/queues.csv" >> $GITHUB_ENV
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            CSV_FILE="${{ github.event.inputs.csv_file }}"
+          else
+            # Find changed queue CSV files in this push
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -E 'input/csv/.*queues\.csv$' || true)
+            if [ -z "$CHANGED_FILES" ]; then
+              CSV_FILE="input/csv/queues.csv"
+            else
+              CSV_FILE=$(echo "$CHANGED_FILES" | head -n1)
+            fi
+          fi
+          echo "CSV_FILE=$CSV_FILE" >> $GITHUB_ENV
+          echo "Processing: $CSV_FILE"
 
-      - name: Run solace_self_service.sh (${{ env.CSV_FILE }})...
+      - name: Extract team name from path
+        id: extract_team
         run: |
-          # required for NT
-          #export http_proxy=$HTTP_PROXY
-          #export https_proxy=$HTTPS_PROXY
-          #echo "http_proxy set to $http_proxy"
-          bash scripts/solace_self_service.sh --csv-file $CSV_FILE --verbose
+          if [[ "${{ env.CSV_FILE }}" =~ input/csv/([^/]+)/queues\.csv ]]; then
+            TEAM_NAME="${BASH_REMATCH[1]}"
+            echo "TEAM=$TEAM_NAME" >> $GITHUB_ENV
+            echo "Team identified: $TEAM_NAME"
+          else
+            echo "TEAM=default" >> $GITHUB_ENV
+            echo "Using default team (legacy flat path)"
+          fi
+
+      - name: Run solace_self_service.sh
+        run: |
+          echo "Processing queues for team: ${{ env.TEAM }}"
+          echo "CSV file: ${{ env.CSV_FILE }}"
+          bash scripts/solace_self_service.sh --csv-file ${{ env.CSV_FILE }} --verbose
         env:
-          #SEMP_USER: ${{ vars.SEMP_USER }}
           SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
-          #SEMP_PASSWORD: ${{ env.SEMP_PASSWORD }}
-          CSV_FILE: ${{ env.CSV_FILE }}
-          # NT
-          #HTTP_PROXY: "http://199.16.205.1:9443/"
-          #HTTPS_PROXY: "https://199.16.205.1:9443/"
+
+      - name: Summary
+        run: |
+          echo "## Queues Processed Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Team**: ${{ env.TEAM }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **File**: ${{ env.CSV_FILE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

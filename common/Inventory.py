@@ -39,10 +39,12 @@ class Inventory:
         yaml_h = YamlHandler.YamlHandler()
 
         inv = {}
-        for file in os.listdir(inv_dir):
-            if file.endswith(".yaml"):
-                log.info ('Reading inventory file: {}'.format(file))
-                inv_file = os.path.join(inv_dir, file)
+        for root, dirs, files in os.walk(inv_dir):
+            for file in files:
+                if not file.endswith(".yaml") and not file.endswith(".yml"):
+                    continue
+                inv_file = os.path.join(root, file)
+                log.info ('Reading inventory file: {}'.format(inv_file))
                 inv_file_data = yaml_h.read_config_file(inv_file)
                 log.debug (f'Read from {inv_file} {inv_file_data}')
                 # Get inventory/hosts/name as key 

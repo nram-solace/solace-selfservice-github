@@ -77,39 +77,112 @@ class CSVToYAMLConverter:
                 self.log(f"Warning: Could not read system config {system_config_path}: {e}")
             return {}
     
-    def load_inventory_mapping(self) -> Dict[str, str]:
-        """Load inventory file and create name->vpn mapping"""
-        inventory_files = [
-            'inventory/sample-inventory-local.yaml',
-            'sample-inventory-local.yaml'
-        ]
-        
-        for inventory_file in inventory_files:
-            try:
-                if os.path.exists(inventory_file):
-                    inventory_config = self.yaml_handler.read_config_file(inventory_file)
-                    inventory = inventory_config.get('inventory', {})
-                    hosts = inventory.get('hosts', [])
-                    
-                    name_to_vpn = {}
-                    for host in hosts:
-                        name = host.get('name')
-                        vpn = host.get('vpn')
-                        if name and vpn:
-                            name_to_vpn[name] = vpn
-                    
-                    if self.verbose:
-                        self.log(f"Loaded inventory mapping from {inventory_file}: {name_to_vpn}")
-                    return name_to_vpn
-                    
-            except Exception as e:
-                if self.verbose:
-                    self.log(f"Warning: Could not read inventory file {inventory_file}: {e}")
-                continue
-        
+    def resolve_team_from_path(self, csv_file: str) -> Optional[str]:
+        """Extract team name from CSV path.
+
+        input/csv/team1/queues.csv -> 'team1'
+        input/csv/queues.csv -> None (flat/legacy)
+        """
+        # Normalize path separators
+        normalized = csv_file.replace('\\', '/')
+
+        # Match pattern: input/csv/<team>/<filename>.csv
+        import re
+        match = re.search(r'input/csv/([^/]+)/[^/]+\.csv$', normalized)
+        if match:
+            team = match.group(1)
+            if self.verbose:
+                self.log(f"Resolved team '{team}' from path: {csv_file}")
+            return team
+
         if self.verbose:
-            self.log("Warning: No inventory file found, using CSV msgVpnName values directly")
-        return {}
+            self.log(f"No team in path (legacy/flat): {csv_file}")
+        return None
+
+    def load_inventory_mapping(self, team: Optional[str] = None) -> Dict[str, str]:
+        """Load inventory files and create name->vpn mapping.
+
+        When team is specified, looks for inventory/<team>/*.yaml first.
+        Falls back to scanning all inventory files for backward compatibility.
+        """
+        name_to_vpn = {}
+        inv_dir = 'inventory'
+
+        # If team specified, try team-specific inventory first
+        if team:
+            team_inv_dir = os.path.join(inv_dir, team)
+            if os.path.isdir(team_inv_dir):
+                name_to_vpn = self._scan_inventory_dir(team_inv_dir)
+                if name_to_vpn:
+                    if self.verbose:
+                        self.log(f"Loaded team inventory from {team_inv_dir}: {name_to_vpn}")
+                    return name_to_vpn
+                elif self.verbose:
+                    self.log(f"No hosts found in team inventory dir {team_inv_dir}, falling back to full scan")
+            elif self.verbose:
+                self.log(f"Team inventory dir {team_inv_dir} not found, falling back to full scan")
+
+        # Fallback: scan all inventory files recursively
+        if os.path.isdir(inv_dir):
+            name_to_vpn = self._scan_inventory_dir(inv_dir, recursive=True)
+            if self.verbose:
+                self.log(f"Loaded inventory mapping from {inv_dir}: {name_to_vpn}")
+
+        if not name_to_vpn:
+            # Legacy fallback: try hardcoded paths
+            for inventory_file in ['inventory/sample-inventory-local.yaml', 'sample-inventory-local.yaml']:
+                if os.path.exists(inventory_file):
+                    name_to_vpn = self._load_single_inventory_file(inventory_file)
+                    if name_to_vpn:
+                        break
+
+        if not name_to_vpn and self.verbose:
+            self.log("Warning: No inventory file found, using CSV values directly")
+
+        return name_to_vpn
+
+    def _scan_inventory_dir(self, inv_dir: str, recursive: bool = False) -> Dict[str, str]:
+        """Scan an inventory directory for YAML files and build name->vpn mapping."""
+        name_to_vpn = {}
+
+        if recursive:
+            for root, dirs, files in os.walk(inv_dir):
+                for file in files:
+                    if file.endswith('.yaml') or file.endswith('.yml'):
+                        inv_file = os.path.join(root, file)
+                        mapping = self._load_single_inventory_file(inv_file)
+                        name_to_vpn.update(mapping)
+        else:
+            for file in os.listdir(inv_dir):
+                if file.endswith('.yaml') or file.endswith('.yml'):
+                    inv_file = os.path.join(inv_dir, file)
+                    mapping = self._load_single_inventory_file(inv_file)
+                    name_to_vpn.update(mapping)
+
+        return name_to_vpn
+
+    def _load_single_inventory_file(self, inventory_file: str) -> Dict[str, str]:
+        """Load a single inventory file and return name->vpn mapping."""
+        try:
+            inventory_config = self.yaml_handler.read_config_file(inventory_file)
+            inventory = inventory_config.get('inventory', {})
+            hosts = inventory.get('hosts', [])
+
+            name_to_vpn = {}
+            for host in hosts:
+                name = host.get('name')
+                vpn = host.get('vpn')
+                if name and vpn:
+                    name_to_vpn[name] = vpn
+
+            if self.verbose and name_to_vpn:
+                self.log(f"Loaded inventory from {inventory_file}: {name_to_vpn}")
+            return name_to_vpn
+
+        except Exception as e:
+            if self.verbose:
+                self.log(f"Warning: Could not read inventory file {inventory_file}: {e}")
+            return {}
     
     def log(self, message: str):
         """Log message with prefix"""
@@ -223,8 +296,8 @@ class CSVToYAMLConverter:
                 self.log(f"Warning: No valid tags found for object type '{object_type}', skipping header validation")
             return
         
-        # Add inventoryKey as always valid (used for inventory lookup)
-        valid_tags_with_inventory_key = valid_tags_for_type + ['inventoryKey']
+        # Add inventoryKey and env as always valid (used for inventory lookup)
+        valid_tags_with_inventory_key = valid_tags_for_type + ['inventoryKey', 'env']
         
         invalid_headers = []
         for header in headers:
@@ -298,93 +371,112 @@ class CSVToYAMLConverter:
         
         return merged_objects
     
-    def validate_and_filter_inventory_keys(self, objects: List[Dict[str, Any]]) -> tuple[str, List[Dict[str, Any]]]:
-        """Validate inventoryKeys and filter objects with consistent inventoryKey, using inventory vpn field"""
+    def validate_and_filter_inventory_keys(self, objects: List[Dict[str, Any]], team: Optional[str] = None) -> tuple[str, List[Dict[str, Any]]]:
+        """Validate inventoryKeys/envs and filter objects, using inventory vpn field.
+
+        Supports two modes:
+        - env (new): Used with team-based paths. Team resolved from CSV path,
+          env selects environment within team inventory.
+        - inventoryKey (legacy): Direct inventory host name lookup.
+        """
         if not objects:
             raise ValueError("No objects to process")
-        
-        # Load inventory mapping
-        inventory_mapping = self.load_inventory_mapping()
-        
-        # Get inventoryKey from first record (used for inventory lookup)
-        if 'inventoryKey' not in objects[0]:
-            raise ValueError("inventoryKey column not found in CSV file")
-        
-        target_inventory_key = objects[0]['inventoryKey']
-        if not target_inventory_key or target_inventory_key.strip() == '':
-            raise ValueError("inventoryKey in first record is empty")
-        
-        # Get actual msgVpnName from inventory, or use CSV value as fallback
-        if target_inventory_key in inventory_mapping:
-            actual_msg_vpn_name = inventory_mapping[target_inventory_key]
+
+        # Determine which key column is in use: env (preferred) or inventoryKey (legacy)
+        use_env_key = 'env' in objects[0]
+        use_inventory_key = 'inventoryKey' in objects[0]
+        key_column = 'env' if use_env_key else 'inventoryKey' if use_inventory_key else None
+
+        if not key_column:
+            raise ValueError("Neither 'env' nor 'inventoryKey' column found in CSV file")
+
+        # Load inventory mapping (team-aware)
+        inventory_mapping = self.load_inventory_mapping(team=team)
+
+        # Get target key from first record
+        target_key = objects[0].get(key_column)
+        if not target_key or (isinstance(target_key, str) and target_key.strip() == ''):
+            raise ValueError(f"{key_column} in first record is empty")
+        if isinstance(target_key, str):
+            target_key = target_key.strip()
+
+        # Resolve actual msgVpnName from inventory
+        if target_key in inventory_mapping:
+            actual_msg_vpn_name = inventory_mapping[target_key]
             if self.verbose:
-                self.log(f"Using msgVpnName '{actual_msg_vpn_name}' from inventory for inventoryKey '{target_inventory_key}'")
+                self.log(f"Using msgVpnName '{actual_msg_vpn_name}' from inventory for {key_column} '{target_key}'")
         else:
-            actual_msg_vpn_name = target_inventory_key
+            actual_msg_vpn_name = target_key
             if self.verbose:
-                self.log(f"Inventory record not found for inventoryKey '{target_inventory_key}', using CSV value as msgVpnName")
-        
+                self.log(f"Inventory record not found for {key_column} '{target_key}', using CSV value as msgVpnName")
+
         valid_objects = []
         skipped_count = 0
         missing_key_count = 0
-        
+
         for i, obj in enumerate(objects):
-            current_inventory_key = None
-            
-            # Handle missing inventoryKey column or empty value
-            if 'inventoryKey' not in obj or not obj['inventoryKey'] or obj['inventoryKey'].strip() == '':
-                # Use inventoryKey from first record
-                current_inventory_key = target_inventory_key
+            current_key = None
+
+            # Handle missing key column or empty value
+            obj_key_val = obj.get(key_column)
+            if not obj_key_val or (isinstance(obj_key_val, str) and obj_key_val.strip() == ''):
+                current_key = target_key
                 missing_key_count += 1
                 if self.verbose:
-                    self.log(f"Record {i+1}: Using inventoryKey '{target_inventory_key}' from first record (missing/empty)")
+                    self.log(f"Record {i+1}: Using {key_column} '{target_key}' from first record (missing/empty)")
             else:
-                current_inventory_key = obj['inventoryKey']
-            
-            # Check if inventoryKey matches the target
-            if current_inventory_key != target_inventory_key:
-                self.log(f"Warning: Record {i+1} has inventoryKey '{current_inventory_key}' but expected '{target_inventory_key}', skipping")
+                current_key = obj_key_val.strip() if isinstance(obj_key_val, str) else obj_key_val
+
+            # Check if key matches the target
+            if current_key != target_key:
+                self.log(f"Warning: Record {i+1} has {key_column} '{current_key}' but expected '{target_key}', skipping")
                 skipped_count += 1
                 continue
-            
-            # Create a copy without inventoryKey and add msgVpnName from inventory
+
+            # Create a copy without env/inventoryKey and add msgVpnName from inventory
             obj_copy = obj.copy()
+            if 'env' in obj_copy:
+                del obj_copy['env']
             if 'inventoryKey' in obj_copy:
                 del obj_copy['inventoryKey']
-            # Add msgVpnName from inventory vpn field
             obj_copy['msgVpnName'] = actual_msg_vpn_name
             valid_objects.append(obj_copy)
-        
+
         if missing_key_count > 0:
-            self.log(f"Applied default inventoryKey '{target_inventory_key}' to {missing_key_count} records with missing/empty inventoryKey")
-        
+            self.log(f"Applied default {key_column} '{target_key}' to {missing_key_count} records with missing/empty {key_column}")
+
         if skipped_count > 0:
-            self.log(f"Skipped {skipped_count} records due to inventoryKey mismatch")
-        
+            self.log(f"Skipped {skipped_count} records due to {key_column} mismatch")
+
         if not valid_objects:
-            raise ValueError(f"No valid records found for inventoryKey '{target_inventory_key}'")
-        
-        self.log(f"Processing {len(valid_objects)} records for inventoryKey '{target_inventory_key}' -> msgVpnName '{actual_msg_vpn_name}'")
-        return actual_msg_vpn_name, valid_objects, target_inventory_key
+            raise ValueError(f"No valid records found for {key_column} '{target_key}'")
+
+        self.log(f"Processing {len(valid_objects)} records for {key_column} '{target_key}' -> msgVpnName '{actual_msg_vpn_name}'")
+        return actual_msg_vpn_name, valid_objects, target_key
     
     def generate_yaml_output(self, verbose: bool, csv_file: str) -> Dict[str, Any]:
         """Generate YAML output structure with vpnName validation"""
-        
+
         # Determine object type from CSV filename
         object_type = self.get_object_type_from_filename(csv_file)
-        
+
+        # Resolve team from CSV path (None for legacy flat paths)
+        team = self.resolve_team_from_path(csv_file)
+
         if self.verbose:
             self.log(f"Processing CSV file: {csv_file}")
             self.log(f"Detected object type: {object_type}")
-        
+            if team:
+                self.log(f"Team: {team}")
+
         # Read CSV data with header validation
         objects = self.read_csv_file(csv_file, object_type)
-        
+
         if not objects:
             raise ValueError(f"No data found in CSV file: {csv_file}")
-        
-        # Validate and filter objects by inventoryKey
-        msg_vpn_name, valid_objects, inventory_key = self.validate_and_filter_inventory_keys(objects)
+
+        # Validate and filter objects by env/inventoryKey (team-aware)
+        msg_vpn_name, valid_objects, inventory_key = self.validate_and_filter_inventory_keys(objects, team=team)
         
         # Read defaults
         defaults = self.read_defaults(object_type)
