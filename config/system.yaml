@@ -67,6 +67,7 @@ skipTags:
 
 valid-tags:
   queues:
+    - env
     - accessType
     - deliveryCountEnabled
     - maxMsgSpoolUsage

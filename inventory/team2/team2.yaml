@@ -1,0 +1,20 @@
+# Solace router and access info for team2
+# Each team gets one inventory file with all their environment entries.
+# The 'env' column in CSV selects which environment to target.
+
+---
+inventory:
+    environment: "team2"
+    hosts:
+    # name matches the env value used in CSV files
+    - name: "dev"
+      host: "localhost"
+      sempUrl: "http://localhost:8080"
+      sempUser: "admin"
+      vpn: "test2-dev-vpn"
+
+    - name: "uat"
+      host: "localhost"
+      sempUrl: "http://localhost:8080"
+      sempUser: "admin"
+      vpn: "test2-uat-vpn"

@@ -1,0 +1,5 @@
+env,queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
+dev,team3-dev-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team3/dev/accounts/>
+dev,team3-dev-queue2,2000,non-exclusive,consume,default,false,10,true,,"team3/dev/events/*,team3/dev/updates/*"
+uat,team3-uat-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team3/uat/accounts/>
+uat,team3-uat-queue2,2000,non-exclusive,consume,default,false,10,true,,"team3/uat/events/*,team3/uat/updates/*"
