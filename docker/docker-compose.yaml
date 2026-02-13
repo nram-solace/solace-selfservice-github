@@ -1,0 +1,169 @@
+# =============================================================================
+# Local Solace PubSub+ Broker for Testing
+# =============================================================================
+# Spins up a single Solace PubSub+ Standard broker and provisions 3 VPNs:
+#   - test1-dev-vpn
+#   - test1-uat-vpn
+#   - test2-dev-vpn
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f solace-broker-init   # watch VPN provisioning
+#
+# SEMP credentials:  admin / admin  (override with SOLACE_ADMIN_PASSWORD)
+# SEMP URL:          http://localhost:8080
+# =============================================================================
+
+name: solace-local-test
+
+volumes:
+  solace-data:
+  solace-var:
+  solace-logs:
+  solace-spool-cache:
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Solace PubSub+ Standard Edition
+  # ---------------------------------------------------------------------------
+  solace-broker:
+    image: solace-pubsub-enterprise:10.25.0.177
+    container_name: solace-broker
+    hostname: solace-broker
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # SEMP / Web UI
+      - "55333:55555" # SMF
+      - "8008:8008"   # Web Transport
+      - "1883:1883"   # MQTT
+      - "8000:8000"   # REST
+      - "5672:5672"   # AMQP
+      - "9000:9000"   # REST (TLS)
+      - "55443:55443" # SMF over TLS
+      - "5550:5550"   # Health check
+    environment:
+      TZ: America/Chicago
+      username_admin_globalaccesslevel: admin
+      username_admin_password: ${SOLACE_ADMIN_PASSWORD:-admin}
+      system_scaling_maxconnectioncount: "1000"
+    shm_size: "1g"
+    ulimits:
+      core: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+      memlock: -1
+    volumes:
+      - solace-data:/var/lib/solace/config
+      - solace-var:/var/lib/solace/spool
+      - solace-spool-cache:/var/lib/solace/spool-cache
+      - solace-logs:/var/lib/solace/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5550/health-check/guaranteed-active"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Init container — creates VPNs, client profiles, ACL profiles
+  # Runs once after the broker is healthy, then exits.
+  # ---------------------------------------------------------------------------
+  solace-broker-init:
+    image: curlimages/curl:latest
+    container_name: solace-broker-init
+    depends_on:
+      solace-broker:
+        condition: service_healthy
+    environment:
+      SOLACE_ADMIN_PASSWORD: ${SOLACE_ADMIN_PASSWORD:-admin}
+      SEMP_PASSWORD: ${SEMP_PASSWORD:-admin}
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        SEMP="http://solace-broker:8080/SEMP/v2/config"
+        AUTH="admin:$${SOLACE_ADMIN_PASSWORD}"
+
+        create_vpn() {
+          VPN_NAME=$$1
+          echo ""
+          echo "=== Creating VPN: $${VPN_NAME} ==="
+
+          # Create message VPN
+          curl -s -o /dev/null -w "  Create VPN:            %{http_code}\n" \
+            -u "$${AUTH}" -X POST "$${SEMP}/msgVpns" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"msgVpnName\": \"$${VPN_NAME}\",
+              \"enabled\": true,
+              \"maxMsgSpoolUsage\": 1500,
+              \"authenticationBasicType\": \"internal\"
+            }"
+
+          # Configure default client profile — allow endpoint creation, guaranteed messaging
+          curl -s -o /dev/null -w "  Client profile:        %{http_code}\n" \
+            -u "$${AUTH}" -X PATCH "$${SEMP}/msgVpns/$${VPN_NAME}/clientProfiles/default" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "allowGuaranteedEndpointCreateEnabled": true,
+              "allowGuaranteedEndpointCreateDurability": "all",
+              "allowGuaranteedMsgSendEnabled": true,
+              "allowGuaranteedMsgReceiveEnabled": true,
+              "allowSharedSubscriptionsEnabled": true,
+              "allowTransactedSessionsEnabled": true
+            }'
+
+          # Configure default ACL profile — allow publish/subscribe on all topics
+          curl -s -o /dev/null -w "  ACL profile:           %{http_code}\n" \
+            -u "$${AUTH}" -X PATCH "$${SEMP}/msgVpns/$${VPN_NAME}/aclProfiles/default" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "publishTopicDefaultAction": "allow",
+              "subscribeTopicDefaultAction": "allow",
+              "clientConnectDefaultAction": "allow",
+              "subscribeShareNameDefaultAction": "allow"
+            }'
+
+          # Enable JNDI access
+          curl -s -o /dev/null -w "  JNDI:                  %{http_code}\n" \
+            -u "$${AUTH}" -X PATCH "$${SEMP}/msgVpns/$${VPN_NAME}" \
+            -H "Content-Type: application/json" \
+            -d '{"jndiEnabled": true}'
+
+          # Create a default client username for testing
+          curl -s -o /dev/null -w "  Client username:       %{http_code}\n" \
+            -u "$${AUTH}" -X POST "$${SEMP}/msgVpns/$${VPN_NAME}/clientUsernames" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"clientUsername\": \"admin\",
+              \"password\": \"$${SEMP_PASSWORD}\",
+              \"enabled\": true
+            }"
+
+          echo "  Done: $${VPN_NAME}"
+        }
+
+        echo "============================================"
+        echo " Solace Broker VPN Provisioning"
+        echo "============================================"
+
+        create_vpn "test1-dev-vpn"
+        create_vpn "test1-uat-vpn"
+        create_vpn "test2-dev-vpn"
+        create_vpn "test2-uat-vpn"
+        create_vpn "test3-dev-vpn"
+        create_vpn "test3-uat-vpn"
+
+
+        echo ""
+        echo "============================================"
+        echo " All VPNs provisioned successfully"
+        echo "============================================"
+        echo ""
+        echo " VPNs:  test1-dev-vpn, test1-uat-vpn, test2-dev-vpn,"
+        echo "        test2-uat-vpn, test3-dev-vpn, test3-uat-vpn"
+        echo " SEMP:  http://localhost:8080"
+        echo " Auth:  admin / $${SOLACE_ADMIN_PASSWORD}"
+        echo "============================================"
