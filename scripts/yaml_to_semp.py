@@ -151,10 +151,13 @@ def main(argv):
     # add this after dumping Cfg. josn.dumps() can't handle log object
     cfg['log_handler'] = log_h
 
-    # Read the inventory file
-    print ('{}[{}]{} Reading inventory from {}/ folder'.format(CYAN, SCRIPT_PREFIX, NC, system_cfg['inventoryDir']))
+    # Read the inventory file (team-scoped if team param is present)
+    team = run_params.get('team')
+    print ('{}[{}]{} Reading inventory from {}/ folder{}'.format(
+        CYAN, SCRIPT_PREFIX, NC, system_cfg['inventoryDir'],
+        f' (team: {team})' if team else ''))
     inv = Inventory.Inventory(cfg, r.verbose)
-    inv_data = inv.read_inventory_dir(system_cfg['inventoryDir'])
+    inv_data = inv.read_inventory_dir(system_cfg['inventoryDir'], team=team)
 
     log.info ('Starting {}-{}'.format(me, VERSION))
     log.info ('SYSTEM CONFIG : {}'.format(json.dumps(system_config_all, indent=2)))

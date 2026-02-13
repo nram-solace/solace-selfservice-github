@@ -32,9 +32,19 @@ class Inventory:
     # Read inventory Yaml files from the inventory directory
     # add them to a dictionary
     
-    def read_inventory_dir(self, inv_dir):
-        """ Read inventory files from inv_dir """
+    def read_inventory_dir(self, inv_dir, team=None):
+        """ Read inventory files from inv_dir. If team is specified, read only from inv_dir/team/ """
         log.enter ('Entering {}::{}'.format(__class__.__name__, inspect.stack()[0][3]))
+
+        # If team is specified, scope to team-specific subdirectory
+        if team:
+            team_dir = os.path.join(inv_dir, team)
+            if os.path.isdir(team_dir):
+                log.info ('Reading team-specific inventory from {}'.format(team_dir))
+                inv_dir = team_dir
+            else:
+                log.warning ('Team inventory dir {} not found, falling back to {}'.format(team_dir, inv_dir))
+
         log.info ('Reading inventory files from {}'.format(inv_dir))
         yaml_h = YamlHandler.YamlHandler()
 

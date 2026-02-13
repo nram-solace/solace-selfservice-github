@@ -486,12 +486,18 @@ class CSVToYAMLConverter:
             valid_objects = self.merge_with_defaults(valid_objects, defaults)
         
         # Build the output structure - keep minimal params for yaml_to_semp.py compatibility
+        params = {
+            'vpnName': inventory_key,  # Use inventory key for yaml_to_semp.py lookup
+            'verbose': verbose,
+            'create': [object_type]
+        }
+
+        # Add team to params so yaml_to_semp.py can scope inventory loading
+        if team:
+            params['team'] = team
+
         output = {
-            'params': {
-                'vpnName': inventory_key,  # Use inventory key for yaml_to_semp.py lookup
-                'verbose': verbose,
-                'create': [object_type]
-            },
+            'params': params,
             'inputs': {
                 object_type: valid_objects
             },
