@@ -6,7 +6,7 @@ Python-based automation tool for provisioning and managing Solace PubSub+ infras
 
 - Python 3.6+
 - Solace PubSub+ broker access with SEMPv2 enabled
-- Environment variable `SEMP_PASSWORD` set for broker authentication
+- Broker password via one of: `SEMP_PASSWORD` env var, encrypted password in inventory, or plaintext password in inventory (see [Password Management](#password-management))
 
 ## Installation
 
@@ -16,17 +16,17 @@ pip install -r requirements.txt
 
 ## Quick Start
 
-1. **Configure broker connection** in `inventory/<team>/` files
+1. **Configure broker connection** in `inventory/<team>.yaml` files
 2. **Set authentication**: `export SEMP_PASSWORD=your_broker_password`
 3. **Run automation**:
 
    ```bash
-   # Team-based (recommended)
-   bash scripts/solace_self_service.sh --csv-file input/csv/team1/queues.csv --verbose
+   # Using wrapper script (recommended)
+   bash scripts/solace_self_service.sh --csv-file input/csv/team1/queues-dev.csv --env dev --verbose
 
    # Or step-by-step
-   python3 scripts/csv_to_yaml.py --csv-file input/csv/team1/queues.csv
-   python3 scripts/yaml_to_semp.py --input input/yaml/team1/queues.yaml -v
+   python3 scripts/csv_to_yaml.py --csv-file input/csv/team1/queues-dev.csv --env dev
+   python3 scripts/yaml_to_semp.py --input input/yaml/team1/queues-dev.yaml -v
    ```
 
 ## Multi-Team Workflow
@@ -38,46 +38,39 @@ Each team gets their own isolated directory for CSV inputs and inventory. This p
 ```text
 input/csv/
 ├── team1/
-│   ├── queues.csv
+│   ├── queues-dev.csv
+│   ├── queues-uat.csv
 │   ├── client-usernames.csv
 │   ├── acl-profiles.csv
 │   └── client-profiles.csv
 ├── team2/
-│   └── queues.csv
-├── team3/
-│   └── queues.csv
-└── queues.csv                  ← Legacy flat path (backward compatible)
+│   ├── queues-dev.csv
+│   └── queues-uat.csv
+└── sample/
+    ├── queues-dev.csv
+    ├── queues-uat.csv
+    └── queues-prod.csv
 
 inventory/
-├── team1/
-│   └── team1.yaml              ← All environments for team1
-├── team2/
-│   └── team2.yaml
-├── team3/
-│   └── team3.yaml
-├── sample-inventory-local.yaml ← Legacy inventory (backward compatible)
-└── sample-inventory-cloud.yaml
+├── team1.yaml                  ← All environments for team1
+├── team2.yaml
+├── team3.yaml
+└── sample.yml                  ← Sample inventory with password examples
 ```
 
 ### How It Works
 
-1. **Team auto-resolved from CSV path**: `input/csv/<team>/queues.csv` extracts `team` from the directory name
-2. **`envKey` column selects environment**: Each row in the CSV specifies which environment (dev, uat, etc.) to target
-3. **Team-scoped inventory lookup**: Only the team's inventory file (`inventory/<team>/<team>.yaml`) is consulted
-4. **Broker connection resolved**: The `envKey` value is matched against `hosts[].name` in the team's inventory to get VPN, SEMP URL, and credentials
+1. **Team auto-resolved from CSV path**: `input/csv/<team>/queues-dev.csv` extracts `team` from the directory name
+2. **`--env` CLI parameter selects environment**: Specifies which environment (dev, uat, prod) to target
+3. **Team-scoped inventory lookup**: Only the team's inventory file (`inventory/<team>.yaml`) is consulted
+4. **Broker connection resolved**: The `--env` value is matched against `hosts[].name` in the team's inventory to get VPN, SEMP URL, and credentials
 
 ### Inventory Resolution
 
 ```text
-Team-based (new):
-  CSV path:  input/csv/team1/queues.csv  → team = "team1"
-  CSV row:   envKey = "dev"
-  Lookup:    inventory/team1/team1.yaml → hosts[name="dev"] → vpn="test1-dev-vpn"
-
-Legacy (backward compatible):
-  CSV path:  input/csv/queues.csv        → team = None
-  CSV row:   inventoryKey = "test"
-  Lookup:    Full recursive scan of inventory/ → hosts[name="test"] → vpn="TestVPN"
+  CSV path:  input/csv/team1/queues-dev.csv  → team = "team1"
+  CLI arg:   --env dev
+  Lookup:    inventory/team1.yaml → hosts[name="dev"] → vpn="test1-dev-vpn"
 ```
 
 ### Team Inventory File Format
@@ -85,31 +78,32 @@ Legacy (backward compatible):
 Each team has a single inventory file with all their environment entries:
 
 ```yaml
-# inventory/team1/team1.yaml
+# inventory/team1.yaml
 inventory:
-    environment: "team1"
     hosts:
-    - name: "dev"                       # envKey value in CSV
+    - name: "dev"                       # --env value
       host: "dev-broker.example.com"
       sempUrl: "https://dev-broker.example.com:8080"
       sempUser: "admin"
+      sempPasswordEnc: "Z0FBQUFBQm95..."  # encrypted password (optional)
       vpn: "Team1-DEV-VPN"
 
     - name: "uat"
       host: "uat-broker.example.com"
       sempUrl: "https://uat-broker.example.com:8080"
       sempUser: "admin"
+      sempPassword: "admin"              # plaintext password (optional)
       vpn: "Team1-UAT-VPN"
 ```
 
 ### Team CSV Format
 
-Team CSVs use the `envKey` column (instead of `inventoryKey`) to select the target environment:
+Team CSVs contain only object definitions — no environment column. The target environment is specified via the `--env` CLI parameter:
 
 ```csv
-envKey,queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
-dev,team1-order-queue,1000,exclusive,consume,default,true,5,true,AUTO,team1/dev/orders/>
-dev,team1-event-queue,2000,non-exclusive,consume,default,false,10,true,,"team1/dev/events/*,team1/dev/notifications/*"
+queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
+team1-dev-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team1/dev/orders/>
+team1-dev-queue2,2000,non-exclusive,consume,default,false,10,true,,"team1/dev/events/*,team1/dev/notifications/*"
 ```
 
 ## Input Formats
@@ -127,15 +121,12 @@ python3 scripts/yaml_to_semp.py --input input/yaml/queues.yaml -v
 Convert CSV files to YAML format first, then process:
 
 ```bash
-# Team-based (recommended)
-bash scripts/solace_self_service.sh --csv-file input/csv/team1/queues.csv --verbose
+# Using wrapper script (recommended)
+bash scripts/solace_self_service.sh --csv-file input/csv/team1/queues-dev.csv --env dev --verbose
 
 # Two-step process
-python3 scripts/csv_to_yaml.py --csv-file input/csv/team1/queues.csv
-python3 scripts/yaml_to_semp.py --input input/yaml/team1/queues.yaml -v
-
-# Legacy flat path (backward compatible)
-bash scripts/solace_self_service.sh --csv-file input/csv/queues.csv --verbose
+python3 scripts/csv_to_yaml.py --csv-file input/csv/team1/queues-dev.csv --env dev
+python3 scripts/yaml_to_semp.py --input input/yaml/team1/queues-dev.yaml -v
 ```
 
 **CSV Format Support:**
@@ -144,25 +135,83 @@ bash scripts/solace_self_service.sh --csv-file input/csv/queues.csv --verbose
 - **Multiple entries**: Comma-separated values (e.g., `topic1,topic2` -> `["topic1", "topic2"]`)
 - **Exception fields**: `clientConnectExceptions`, `publishTopicExceptions`, `subscribeTopicExceptions` are always treated as lists
 - **Header validation**: CSV column headers are validated against `config/system.yaml` valid-tags
-- **envKey column** (team-based): Selects the target environment from the team's inventory file
-- **inventoryKey column** (legacy): Maps CSV rows to broker inventory entries for VPN name resolution
+- **Per-environment CSVs**: Separate files per environment (e.g., `queues-dev.csv`, `queues-uat.csv`)
 
-**Queue CSV Examples:**
-
-Team-based (with `envKey`):
+**Queue CSV Example:**
 
 ```csv
-envKey,queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
-dev,team1-queue-1,1000,exclusive,consume,default,true,5,true,AUTO,team1/orders/>
-uat,team1-queue-2,2000,non-exclusive,consume,default,false,10,true,,"team1/events/*,team1/alerts/*"
+queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
+team1-queue-1,1000,exclusive,consume,default,true,5,true,AUTO,team1/orders/>
+team1-queue-2,2000,non-exclusive,consume,default,false,10,true,,"team1/events/*,team1/alerts/*"
 ```
 
-Legacy (with `inventoryKey`):
+## Password Management
 
-```csv
-inventoryKey,queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
-test,my-queue-1,1000,exclusive,consume,default,true,5,true,AUTO,topic/1
-test,my-queue-2,2000,non-exclusive,read-only,default,false,10,true,custom/jndi/name,"topic/>,topic2/*"
+The tool supports three password sources, checked in priority order:
+
+1. **`SEMP_PASSWORD` env var** — overrides everything (recommended for CI/CD)
+2. **`sempPasswordEnc` in inventory** — encrypted password, decrypted at runtime (recommended for shared/production use)
+3. **`sempPassword` in inventory** — plaintext password (for local dev only)
+4. If none are available, the script exits with an error
+
+### Encrypting Passwords
+
+The `crypto_utils.py` CLI tool encrypts/decrypts passwords using Fernet encryption (AES-128-CBC + HMAC-SHA256) with PBKDF2 key derivation.
+
+```bash
+# Install cryptography library (only needed for encrypted passwords)
+pip install cryptography
+
+# Encrypt a password
+export PASSWORD_ENC_KEY="your-secret-key"
+python3 scripts/crypto_utils.py --encrypt-string "broker-password"
+
+# Or use --key flag
+python3 scripts/crypto_utils.py --key "your-secret-key" --encrypt-string "broker-password"
+
+# Decrypt to verify
+python3 scripts/crypto_utils.py --decrypt-string "<encrypted-value>"
+```
+
+### Inventory Password Examples
+
+```yaml
+inventory:
+    hosts:
+    # Encrypted password (recommended for shared use)
+    - name: "dev"
+      host: "dev-broker.example.com"
+      sempUrl: "https://dev-broker.example.com:8080"
+      sempUser: "admin"
+      sempPasswordEnc: "Z0FBQUFBQm95SXZa..."
+      vpn: "Dev-VPN"
+
+    # Plaintext password (for local dev only)
+    - name: "uat"
+      host: "uat-broker.example.com"
+      sempUrl: "https://uat-broker.example.com:8080"
+      sempUser: "admin"
+      sempPassword: "admin"
+      vpn: "UAT-VPN"
+
+    # No password in file — uses SEMP_PASSWORD env var at runtime
+    - name: "prod"
+      host: "prod-broker.example.com"
+      sempUrl: "https://prod-broker.example.com:8080"
+      sempUser: "admin"
+      vpn: "Prod-VPN"
+```
+
+### Running with Different Password Modes
+
+```bash
+# With encrypted password in inventory
+PASSWORD_ENC_KEY="your-secret-key" bash scripts/solace_self_service.sh \
+  --csv-file input/csv/team1/queues-dev.csv --env dev --verbose
+
+# With env var override (no decryption needed)
+SEMP_PASSWORD="admin" bash scripts/solace_self_service.sh \
+  --csv-file input/csv/team1/queues-dev.csv --env dev --verbose
 ```
 
 ## Supported Operations
@@ -194,38 +243,35 @@ test,my-queue-2,2000,non-exclusive,read-only,default,false,10,true,custom/jndi/n
 
 ### Available Workflows
 
-All workflows support both team-based paths (`input/csv/<team>/`) and legacy flat paths (`input/csv/`). Team name is auto-extracted from the CSV directory path.
+All workflows use `workflow_dispatch` (manual trigger) with required `csv_file` and `environment` inputs. Team name is auto-extracted from the CSV directory path.
 
 - **`process-queues-csv.yml`**: Queue processing workflow
-  - Triggers on push to `input/csv/**/queues.csv`
-  - Auto-detects team from path pattern `input/csv/<team>/queues.csv`
-  - Supports `workflow_dispatch` with custom CSV path input
-  - Posts team name and file path in GitHub step summary
+  - Manual dispatch with `csv_file` path and `environment` inputs
+  - Auto-detects team from path pattern `input/csv/<team>/queues*.csv`
+  - Posts team name, environment, and file path in GitHub step summary
 - **`process-client-usernames-csv.yml`**: Processes dependency chain in sequence
-  - Triggers on push to `input/csv/**/client-usernames.csv`
   - Processing order: ACL profiles → client profiles → client usernames
   - Each step checks for the corresponding CSV file in the team directory before processing
 - **`process-acl-profiles-csv.yml`**: ACL profile processing
-  - Triggers on push to `input/csv/**/acl-profiles.csv`
 
 ### Workflow Features
 
 - Automatic CSV to YAML conversion via `solace_self_service.sh`
-- Team-scoped processing (each team's CSV triggers independently)
-- Sequential processing of related configurations (ACL -> Client Profiles -> Client Usernames)
-- GitHub step summary with team name, file path, and processing results
-- Manual trigger via `workflow_dispatch` for ad-hoc runs
+- Team-scoped processing (each team's CSV processed independently)
+- Sequential processing of related configurations (ACL → Client Profiles → Client Usernames)
+- GitHub step summary with team name, environment, file path, and processing results
+- `--env` parameter passed through to scripts for environment targeting
 
 ### Setup Requirements
 
-- GitHub repository secrets: `SEMP_PASSWORD`
+- GitHub repository secrets: `SEMP_PASSWORD` (or `PASSWORD_ENC_KEY` if using encrypted passwords in inventory)
 - Optional: GitHub repository variables for `SEMP_USER`
 
 ## Configuration Structure
 
 ```text
 config/
-├── system.yaml          ← SEMP settings, valid-tags (incl. envKey), processing rules
+├── system.yaml          ← SEMP settings, valid-tags, processing rules
 └── defaults/            ← Default object templates
     ├── queue.yaml
     ├── dmqueue.yaml
@@ -234,21 +280,25 @@ config/
     └── acl-profile.yaml
 
 inventory/
-├── <team>/              ← Per-team inventory (multi-env hosts)
-│   └── <team>.yaml
-├── sample-inventory-local.yaml  ← Legacy/sample inventory
-└── sample-inventory-cloud.yaml
+├── <team>.yaml          ← Per-team inventory (multi-env hosts)
+└── sample.yml           ← Sample inventory with password examples
 
 input/
 ├── csv/
-│   ├── <team>/          ← Per-team CSV inputs
-│   │   ├── queues.csv
-│   │   ├── client-usernames.csv
-│   │   ├── acl-profiles.csv
-│   │   └── client-profiles.csv
-│   └── queues.csv       ← Legacy flat path
+│   └── <team>/          ← Per-team CSV inputs (one file per env)
+│       ├── queues-dev.csv
+│       ├── queues-uat.csv
+│       ├── client-usernames.csv
+│       ├── acl-profiles.csv
+│       └── client-profiles.csv
 ├── yaml/                ← Generated YAML (build artifact, gitignored)
 └── sample/              ← Sample YAML input files for reference
+
+scripts/
+├── yaml_to_semp.py      ← Main automation script (YAML → SEMPv2)
+├── csv_to_yaml.py       ← CSV to YAML converter
+├── solace_self_service.sh ← Wrapper script (CSV → YAML → SEMP pipeline)
+└── crypto_utils.py      ← Password encryption/decryption CLI tool
 
 .github/workflows/       ← GitHub Actions automation workflows
 ```
@@ -265,48 +315,45 @@ To add a new team to the self-service system:
 
 2. **Create team inventory file** with environment entries:
 
-   ```bash
-   mkdir -p inventory/<team-name>
-   ```
-
-   Create `inventory/<team-name>/<team-name>.yaml`:
+   Create `inventory/<team-name>.yaml`:
 
    ```yaml
    inventory:
-       environment: "<team-name>"
        hosts:
        - name: "dev"
          host: "dev-broker.example.com"
          sempUrl: "https://dev-broker.example.com:8080"
          sempUser: "admin"
+         sempPasswordEnc: "<encrypted-password>"
          vpn: "<TeamName>-DEV-VPN"
        - name: "uat"
          host: "uat-broker.example.com"
          sempUrl: "https://uat-broker.example.com:8080"
          sempUser: "admin"
+         sempPasswordEnc: "<encrypted-password>"
          vpn: "<TeamName>-UAT-VPN"
    ```
 
-3. **Create sample CSV** in the team directory:
+3. **Create CSV files** per environment in the team directory:
 
    ```csv
-   envKey,queueName,maxMsgSpoolUsage,accessType,permission,owner
-   dev,example-queue,1000,exclusive,consume,default
+   queueName,maxMsgSpoolUsage,accessType,permission,owner
+   example-queue,1000,exclusive,consume,default
    ```
 
 4. **Test the pipeline**:
 
    ```bash
    export SEMP_PASSWORD=your_broker_password
-   bash scripts/solace_self_service.sh --csv-file input/csv/<team-name>/queues.csv --verbose
+   bash scripts/solace_self_service.sh --csv-file input/csv/<team-name>/queues-dev.csv --env dev --verbose
    ```
 
 ## Operational Tasks
 
 ### Environment Management
 
-- **Development**: Use `local/input/nram-dev.yaml` and `inventory/nram/nram-local.yaml`
-- **Testing**: Use `inventory/nram/nram-cloud.yaml`
+- **Development**: Use `local/input/nram-dev.yaml` and `inventory/nram/nram-local.yaml` (dev-only, multi-file)
+- **Testing**: Use `inventory/nram/nram-cloud.yaml` (dev-only, multi-file)
 - **Production**: Use environment-specific `inventory/` files
 
 ### Logging
@@ -342,29 +389,34 @@ The init container automatically provisions per-team VPNs (e.g., `test1-dev-vpn`
 
 ## Recent Improvements
 
-### Multi-Team Isolation (Phase 1)
+### Encrypted Password Support
 
-- **Per-team directories**: `input/csv/<team>/` and `inventory/<team>/` for team isolation
-- **envKey column**: New CSV column that selects target environment from team's inventory (replaces `inventoryKey` for team workflows)
-- **Team-scoped inventory**: `csv_to_yaml.py` resolves team from CSV path and loads only that team's inventory file
-- **Recursive inventory scanning**: `Inventory.py` uses `os.walk()` to discover inventory files in subdirectories
-- **Team propagation**: Team context flows from `csv_to_yaml.py` through generated YAML to `yaml_to_semp.py` and `Inventory.py`
-- **Workflow glob triggers**: All workflows use `input/csv/**/<type>.csv` patterns for multi-team support
-- **Backward compatibility**: Legacy flat paths (`input/csv/queues.csv` with `inventoryKey`) continue to work unchanged
+- **Per-broker passwords**: New `sempPasswordEnc` field in inventory files for encrypted passwords
+- **Password priority**: `SEMP_PASSWORD` env var > `sempPasswordEnc` (decrypt) > `sempPassword` (plaintext) > error exit
+- **CLI encryption tool**: `scripts/crypto_utils.py` for encrypting/decrypting passwords (Fernet/PBKDF2)
+- **Lazy decryption**: Password resolved only for the target host, not during inventory loading
+- **Optional dependency**: `cryptography` library only required when using encrypted passwords
+
+### Environment Selection via CLI
+
+- **`--env` CLI parameter**: Clean separation of "what to create" from "where to create it"
+- **No env column in CSV**: Removed `envKey`/`inventoryKey` columns from CSV files
+- **Per-environment CSVs**: Split CSV files by environment (e.g., `queues-dev.csv`, `queues-uat.csv`)
+- **Team path required**: All CSVs must be under `input/csv/<team>/` (flat paths eliminated)
+- **Workflows updated**: All workflows now use `workflow_dispatch` with required `environment` input (push triggers removed)
+
+### Multi-Team Isolation
+
+- **Per-team directories**: `input/csv/<team>/` for CSV inputs, `inventory/<team>.yaml` for broker connections
+- **Team-scoped inventory**: Team context flows end-to-end from `csv_to_yaml.py` through `yaml_to_semp.py` to `Inventory.py`
+- **Workflow glob triggers**: All workflows support multi-team path patterns
 
 ### Version 2.5.2 Updates
 
 - **Custom JNDI Names**: Support for AUTO, custom, or skip JNDI mapping via `jndiQueueName` field
 - **Max Redelivery Count**: Added `maxRedeliveryCount` queue configuration support
-- **Manual Workflow Dispatch**: `workflow_dispatch` trigger for manual CSV processing
 - **Enhanced CSV Parsing**: Fixed single entry handling for exception fields
 - **Header Validation**: CSV headers validated against `config/system.yaml` valid-tags
-
-### CSV Parsing Fixes
-
-- Single topic exceptions now correctly formatted as lists
-- Character list detection and correction for malformed CSV data
-- Automatic list wrapping for exception fields (`clientConnectExceptions`, `publishTopicExceptions`, `subscribeTopicExceptions`)
 
 ## Limitations
 
@@ -372,4 +424,3 @@ The init container automatically provisions per-team VPNs (e.g., `test1-dev-vpn`
 - Subscription deletion not implemented
 - Limited to supported Solace object types (queues, client usernames, profiles)
 - No built-in backup/rollback functionality
-- PR-based approval and validation guardrails planned for future phases

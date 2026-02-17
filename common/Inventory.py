@@ -33,17 +33,30 @@ class Inventory:
     # add them to a dictionary
     
     def read_inventory_dir(self, inv_dir, team=None):
-        """ Read inventory files from inv_dir. If team is specified, read only from inv_dir/team/ """
+        """ Read inventory files from inv_dir. If team is specified, read only inventory/<team>.yaml """
         log.enter ('Entering {}::{}'.format(__class__.__name__, inspect.stack()[0][3]))
 
-        # If team is specified, scope to team-specific subdirectory
+        # If team is specified, load team-specific inventory file directly
         if team:
-            team_dir = os.path.join(inv_dir, team)
-            if os.path.isdir(team_dir):
-                log.info ('Reading team-specific inventory from {}'.format(team_dir))
-                inv_dir = team_dir
+            team_file = os.path.join(inv_dir, f'{team}.yaml')
+            if not os.path.isfile(team_file):
+                team_file = os.path.join(inv_dir, f'{team}.yml')
+            if os.path.isfile(team_file):
+                log.info ('Reading team-specific inventory from {}'.format(team_file))
+                yaml_h = YamlHandler.YamlHandler()
+                inv = {}
+                inv_file_data = yaml_h.read_config_file(team_file)
+                log.debug (f'Read from {team_file} {inv_file_data}')
+                for host_data in inv_file_data['inventory']['hosts']:
+                    name = host_data['name']
+                    log.info ('Adding host: {} to the inventory'.format(name))
+                    inv[name] = host_data
+                self.inv = inv
+                log.info ('Inventory read from {} hosts'.format(len(inv)))
+                return inv
             else:
-                log.warning ('Team inventory dir {} not found, falling back to {}'.format(team_dir, inv_dir))
+                log.warning ('Team inventory file {} not found, falling back to {}'.format(
+                    os.path.join(inv_dir, f'{team}.yaml'), inv_dir))
 
         log.info ('Reading inventory files from {}'.format(inv_dir))
         yaml_h = YamlHandler.YamlHandler()

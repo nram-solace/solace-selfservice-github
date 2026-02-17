@@ -105,25 +105,27 @@ class CSVToYAMLConverter:
     def load_inventory_mapping(self, team: Optional[str] = None) -> Dict[str, str]:
         """Load inventory files and create name->vpn mapping.
 
-        When team is specified, looks for inventory/<team>/*.yaml first.
+        When team is specified, looks for inventory/<team>.yaml first.
         Falls back to scanning all inventory files for backward compatibility.
         """
         name_to_vpn = {}
         inv_dir = 'inventory'
 
-        # If team specified, try team-specific inventory first
+        # If team specified, try team-specific inventory file first
         if team:
-            team_inv_dir = os.path.join(inv_dir, team)
-            if os.path.isdir(team_inv_dir):
-                name_to_vpn = self._scan_inventory_dir(team_inv_dir)
+            team_inv_file = os.path.join(inv_dir, f'{team}.yaml')
+            if not os.path.isfile(team_inv_file):
+                team_inv_file = os.path.join(inv_dir, f'{team}.yml')
+            if os.path.isfile(team_inv_file):
+                name_to_vpn = self._load_single_inventory_file(team_inv_file)
                 if name_to_vpn:
                     if self.verbose:
-                        self.log(f"Loaded team inventory from {team_inv_dir}: {name_to_vpn}")
+                        self.log(f"Loaded team inventory from {team_inv_file}: {name_to_vpn}")
                     return name_to_vpn
                 elif self.verbose:
-                    self.log(f"No hosts found in team inventory dir {team_inv_dir}, falling back to full scan")
+                    self.log(f"No hosts found in team inventory file {team_inv_file}, falling back to full scan")
             elif self.verbose:
-                self.log(f"Team inventory dir {team_inv_dir} not found, falling back to full scan")
+                self.log(f"Team inventory file {os.path.join(inv_dir, f'{team}.yaml')} not found, falling back to full scan")
 
         # Fallback: scan all inventory files recursively
         if os.path.isdir(inv_dir):

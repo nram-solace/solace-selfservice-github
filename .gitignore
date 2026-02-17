@@ -17,3 +17,4 @@ venv
 pkg/**
 tmp/**
 logs/**
+*/__pycache__/**
