@@ -1,16 +1,16 @@
 name: Process Queues CSV
 
 on:
-  push:
-    paths:
-      - 'input/csv/**/queues.csv'
-      - 'input/csv/queues.csv'  # Backward compatibility (flat/legacy)
   workflow_dispatch:
     inputs:
       csv_file:
         description: 'Path to CSV file (e.g., input/csv/team1/queues.csv)'
         required: true
-        default: 'input/csv/queues.csv'
+        default: 'input/csv/sample/queues.csv'
+      environment:
+        description: 'Target environment (e.g., dev, uat, prod)'
+        required: true
+        type: string
 
 jobs:
   process_queues:
@@ -20,8 +20,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2  # Need previous commit for diff
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,27 +29,12 @@ jobs:
       - name: Install dependencies
         run: pip install requests pyyaml
 
-      - name: Determine CSV file path
-        id: csv_path
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            CSV_FILE="${{ github.event.inputs.csv_file }}"
-          else
-            # Find changed queue CSV files in this push
-            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -E 'input/csv/.*queues\.csv$' || true)
-            if [ -z "$CHANGED_FILES" ]; then
-              CSV_FILE="input/csv/queues.csv"
-            else
-              CSV_FILE=$(echo "$CHANGED_FILES" | head -n1)
-            fi
-          fi
-          echo "CSV_FILE=$CSV_FILE" >> $GITHUB_ENV
-          echo "Processing: $CSV_FILE"
-
       - name: Extract team name from path
         id: extract_team
         run: |
-          if [[ "${{ env.CSV_FILE }}" =~ input/csv/([^/]+)/queues\.csv ]]; then
+          CSV_FILE="${{ github.event.inputs.csv_file }}"
+          echo "CSV_FILE=$CSV_FILE" >> $GITHUB_ENV
+          if [[ "$CSV_FILE" =~ input/csv/([^/]+)/queues\.csv ]]; then
             TEAM_NAME="${BASH_REMATCH[1]}"
             echo "TEAM=$TEAM_NAME" >> $GITHUB_ENV
             echo "Team identified: $TEAM_NAME"
@@ -64,7 +47,8 @@ jobs:
         run: |
           echo "Processing queues for team: ${{ env.TEAM }}"
           echo "CSV file: ${{ env.CSV_FILE }}"
-          bash scripts/solace_self_service.sh --csv-file ${{ env.CSV_FILE }} --verbose
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          bash scripts/solace_self_service.sh --csv-file ${{ env.CSV_FILE }} --env ${{ github.event.inputs.environment }} --verbose
         env:
           SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
 
@@ -73,6 +57,7 @@ jobs:
           echo "## Queues Processed Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Team**: ${{ env.TEAM }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "- **File**: ${{ env.CSV_FILE }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

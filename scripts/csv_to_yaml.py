@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 CSV to YAML Converter for Solace Configuration
-Reads CSV files and generates YAML output similar to nram-test.yaml
+Reads CSV files and generates YAML output for yaml_to_semp.py
 
 Usage:
-    python csv_to_yaml.py --verbose <true|false> --csv-file <path/to/csv>
-    
+    python csv_to_yaml.py --csv-file <path/to/csv> --env <environment>
+
 Example:
-    python csv_to_yaml.py --verbose true --csv-file input/csv/queues.csv
-    # Output: input/yaml/queues.yaml
+    python csv_to_yaml.py --csv-file input/csv/queues.csv --env dev
+    python csv_to_yaml.py --csv-file input/csv/team1/queues.csv --env uat -v
 """
 
 # Version information
@@ -77,11 +77,13 @@ class CSVToYAMLConverter:
                 self.log(f"Warning: Could not read system config {system_config_path}: {e}")
             return {}
     
-    def resolve_team_from_path(self, csv_file: str) -> Optional[str]:
+    def resolve_team_from_path(self, csv_file: str) -> str:
         """Extract team name from CSV path.
 
         input/csv/team1/queues.csv -> 'team1'
-        input/csv/queues.csv -> None (flat/legacy)
+        input/csv/queues.csv -> error (team is required)
+
+        CSV files must be placed under input/csv/<team>/ to scope inventory lookup.
         """
         # Normalize path separators
         normalized = csv_file.replace('\\', '/')
@@ -95,9 +97,10 @@ class CSVToYAMLConverter:
                 self.log(f"Resolved team '{team}' from path: {csv_file}")
             return team
 
-        if self.verbose:
-            self.log(f"No team in path (legacy/flat): {csv_file}")
-        return None
+        raise ValueError(
+            f"CSV file must be under input/csv/<team>/ directory: {csv_file}\n"
+            f"Example: input/csv/team1/queues.csv"
+        )
 
     def load_inventory_mapping(self, team: Optional[str] = None) -> Dict[str, str]:
         """Load inventory files and create name->vpn mapping.
@@ -189,23 +192,29 @@ class CSVToYAMLConverter:
         print(f"{self.MAGENTA}[{self.SCRIPT_PREFIX}]{self.NC} {message}")
         
     def get_object_type_from_filename(self, csv_file: str) -> str:
-        """Extract object type from CSV filename"""
+        """Extract object type from CSV filename.
+
+        Supports env-suffixed filenames like queues-dev.csv, client-usernames-uat.csv.
+        The suffix after the object type is ignored.
+        """
         filename = os.path.basename(csv_file)
         name_without_ext = os.path.splitext(filename)[0]
-        
-        # Map common variations
-        if name_without_ext in ['queue', 'queues']:
-            return 'queues'
-        elif name_without_ext in ['client-username', 'client-usernames', 'client_user', 'client_users']:
-            return 'client-usernames'
-        elif name_without_ext in ['client-profile', 'client-profiles', 'client_profile', 'client_profiles']:
-            return 'client-profiles'
-        elif name_without_ext in ['acl-profile', 'acl-profiles', 'acl_profile', 'acl_profiles']:
-            return 'acl-profiles'
-        elif name_without_ext in ['subscription', 'subscriptions']:
-            return 'subscriptions'
-        else:
-            return name_without_ext
+
+        # Object type prefixes to match against (order matters - check longer prefixes first)
+        type_prefixes = [
+            (['client-username', 'client-usernames', 'client_user', 'client_users'], 'client-usernames'),
+            (['client-profile', 'client-profiles', 'client_profile', 'client_profiles'], 'client-profiles'),
+            (['acl-profile', 'acl-profiles', 'acl_profile', 'acl_profiles'], 'acl-profiles'),
+            (['subscription', 'subscriptions'], 'subscriptions'),
+            (['queue', 'queues'], 'queues'),
+        ]
+
+        for prefixes, object_type in type_prefixes:
+            for prefix in prefixes:
+                if name_without_ext == prefix or name_without_ext.startswith(prefix + '-') or name_without_ext.startswith(prefix + '_'):
+                    return object_type
+
+        return name_without_ext
     
     def read_defaults(self, object_type: str) -> Dict[str, Any]:
         """Read default configuration for the given object type"""
@@ -295,19 +304,16 @@ class CSVToYAMLConverter:
             if self.verbose:
                 self.log(f"Warning: No valid tags found for object type '{object_type}', skipping header validation")
             return
-        
-        # Add inventoryKey and env as always valid (used for inventory lookup)
-        valid_tags_with_inventory_key = valid_tags_for_type + ['inventoryKey', 'env']
-        
+
         invalid_headers = []
         for header in headers:
-            if header not in valid_tags_with_inventory_key:
+            if header not in valid_tags_for_type:
                 invalid_headers.append(header)
-        
+
         if invalid_headers:
             error_msg = (f"Invalid column headers found in CSV file:\n"
                         f"Invalid headers: {invalid_headers}\n"
-                        f"Valid headers for '{object_type}': {sorted(valid_tags_with_inventory_key)}")
+                        f"Valid headers for '{object_type}': {sorted(valid_tags_for_type)}")
             raise ValueError(error_msg)
         
         if self.verbose:
@@ -371,103 +377,65 @@ class CSVToYAMLConverter:
         
         return merged_objects
     
-    def validate_and_filter_inventory_keys(self, objects: List[Dict[str, Any]], team: Optional[str] = None) -> tuple[str, List[Dict[str, Any]]]:
-        """Validate inventoryKeys/envs and filter objects, using inventory vpn field.
+    def resolve_env_and_prepare_objects(self, objects: List[Dict[str, Any]], env: str, team: Optional[str] = None) -> tuple[str, List[Dict[str, Any]]]:
+        """Resolve environment to msgVpnName via inventory and prepare objects.
 
-        Supports two modes:
-        - env (new): Used with team-based paths. Team resolved from CSV path,
-          env selects environment within team inventory.
-        - inventoryKey (legacy): Direct inventory host name lookup.
+        Args:
+            objects: List of parsed CSV row dictionaries
+            env: Target environment (inventory host name, e.g., dev, uat, prod)
+            team: Team name resolved from CSV path (scopes inventory lookup)
+
+        Returns:
+            Tuple of (actual_msg_vpn_name, prepared_objects)
         """
         if not objects:
             raise ValueError("No objects to process")
 
-        # Determine which key column is in use: env (preferred) or inventoryKey (legacy)
-        use_env_key = 'env' in objects[0]
-        use_inventory_key = 'inventoryKey' in objects[0]
-        key_column = 'env' if use_env_key else 'inventoryKey' if use_inventory_key else None
-
-        if not key_column:
-            raise ValueError("Neither 'env' nor 'inventoryKey' column found in CSV file")
-
         # Load inventory mapping (team-aware)
         inventory_mapping = self.load_inventory_mapping(team=team)
 
-        # Get target key from first record
-        target_key = objects[0].get(key_column)
-        if not target_key or (isinstance(target_key, str) and target_key.strip() == ''):
-            raise ValueError(f"{key_column} in first record is empty")
-        if isinstance(target_key, str):
-            target_key = target_key.strip()
-
         # Resolve actual msgVpnName from inventory
-        if target_key in inventory_mapping:
-            actual_msg_vpn_name = inventory_mapping[target_key]
+        if env in inventory_mapping:
+            actual_msg_vpn_name = inventory_mapping[env]
             if self.verbose:
-                self.log(f"Using msgVpnName '{actual_msg_vpn_name}' from inventory for {key_column} '{target_key}'")
+                self.log(f"Resolved env '{env}' -> msgVpnName '{actual_msg_vpn_name}' from inventory")
         else:
-            actual_msg_vpn_name = target_key
+            actual_msg_vpn_name = env
             if self.verbose:
-                self.log(f"Inventory record not found for {key_column} '{target_key}', using CSV value as msgVpnName")
+                self.log(f"Env '{env}' not found in inventory, using as msgVpnName directly")
 
-        valid_objects = []
-        skipped_count = 0
-        missing_key_count = 0
-
-        for i, obj in enumerate(objects):
-            current_key = None
-
-            # Handle missing key column or empty value
-            obj_key_val = obj.get(key_column)
-            if not obj_key_val or (isinstance(obj_key_val, str) and obj_key_val.strip() == ''):
-                current_key = target_key
-                missing_key_count += 1
-                if self.verbose:
-                    self.log(f"Record {i+1}: Using {key_column} '{target_key}' from first record (missing/empty)")
-            else:
-                current_key = obj_key_val.strip() if isinstance(obj_key_val, str) else obj_key_val
-
-            # Check if key matches the target
-            if current_key != target_key:
-                self.log(f"Warning: Record {i+1} has {key_column} '{current_key}' but expected '{target_key}', skipping")
-                skipped_count += 1
-                continue
-
-            # Create a copy without env/inventoryKey and add msgVpnName from inventory
+        # Prepare objects: strip env/inventoryKey if present, set msgVpnName
+        prepared_objects = []
+        for obj in objects:
             obj_copy = obj.copy()
-            if 'env' in obj_copy:
-                del obj_copy['env']
-            if 'inventoryKey' in obj_copy:
-                del obj_copy['inventoryKey']
+            obj_copy.pop('env', None)
+            obj_copy.pop('inventoryKey', None)
             obj_copy['msgVpnName'] = actual_msg_vpn_name
-            valid_objects.append(obj_copy)
+            prepared_objects.append(obj_copy)
 
-        if missing_key_count > 0:
-            self.log(f"Applied default {key_column} '{target_key}' to {missing_key_count} records with missing/empty {key_column}")
-
-        if skipped_count > 0:
-            self.log(f"Skipped {skipped_count} records due to {key_column} mismatch")
-
-        if not valid_objects:
-            raise ValueError(f"No valid records found for {key_column} '{target_key}'")
-
-        self.log(f"Processing {len(valid_objects)} records for {key_column} '{target_key}' -> msgVpnName '{actual_msg_vpn_name}'")
-        return actual_msg_vpn_name, valid_objects, target_key
+        self.log(f"Processing {len(prepared_objects)} records for env '{env}' -> msgVpnName '{actual_msg_vpn_name}'")
+        return actual_msg_vpn_name, prepared_objects
     
-    def generate_yaml_output(self, verbose: bool, csv_file: str) -> Dict[str, Any]:
-        """Generate YAML output structure with vpnName validation"""
+    def generate_yaml_output(self, verbose: bool, csv_file: str, env: str) -> Dict[str, Any]:
+        """Generate YAML output structure.
+
+        Args:
+            verbose: Enable verbose output
+            csv_file: Path to CSV input file
+            env: Target environment (inventory host name)
+        """
 
         # Determine object type from CSV filename
         object_type = self.get_object_type_from_filename(csv_file)
 
-        # Resolve team from CSV path (None for legacy flat paths)
+        # Resolve team from CSV path (required)
         team = self.resolve_team_from_path(csv_file)
 
         if self.verbose:
             self.log(f"Processing CSV file: {csv_file}")
             self.log(f"Detected object type: {object_type}")
-            if team:
-                self.log(f"Team: {team}")
+            self.log(f"Target environment: {env}")
+            self.log(f"Team: {team}")
 
         # Read CSV data with header validation
         objects = self.read_csv_file(csv_file, object_type)
@@ -475,26 +443,25 @@ class CSVToYAMLConverter:
         if not objects:
             raise ValueError(f"No data found in CSV file: {csv_file}")
 
-        # Validate and filter objects by env/inventoryKey (team-aware)
-        msg_vpn_name, valid_objects, inventory_key = self.validate_and_filter_inventory_keys(objects, team=team)
-        
+        # Resolve env to msgVpnName and prepare objects
+        msg_vpn_name, valid_objects = self.resolve_env_and_prepare_objects(objects, env=env, team=team)
+
         # Read defaults
         defaults = self.read_defaults(object_type)
-        
+
         # Merge with defaults
         if defaults:
             valid_objects = self.merge_with_defaults(valid_objects, defaults)
-        
+
         # Build the output structure - keep minimal params for yaml_to_semp.py compatibility
         params = {
-            'vpnName': inventory_key,  # Use inventory key for yaml_to_semp.py lookup
+            'vpnName': env,  # Use env key for yaml_to_semp.py inventory lookup
             'verbose': verbose,
             'create': [object_type]
         }
 
         # Add team to params so yaml_to_semp.py can scope inventory loading
-        if team:
-            params['team'] = team
+        params['team'] = team
 
         output = {
             'params': params,
@@ -506,11 +473,11 @@ class CSVToYAMLConverter:
                 'configFile': 'config/system.yaml'
             }
         }
-        
+
         # Add defaults to output if they exist
         if defaults:
             output['defaults'][object_type] = defaults
-        
+
         return output
         
     
@@ -531,10 +498,11 @@ class CSVToYAMLConverter:
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(description='Convert CSV files to YAML configuration')
-    # TLA name is now read from CSV file, no longer a command line argument
     parser.add_argument('--verbose', '-v', action='count', default=0,
                        help='Verbose output. Use -vvv for more verbose output')
     parser.add_argument('--csv-file', required=True, help='Path to CSV file')
+    parser.add_argument('--env', '-e', required=True,
+                       help='Target environment (inventory host name, e.g., dev, uat, prod)')
     parser.add_argument('--output-file', help='Output YAML file path (optional)')
     
     args = parser.parse_args()
@@ -552,7 +520,8 @@ def main():
         # Generate YAML output
         output = converter.generate_yaml_output(
             verbose=verbose,
-            csv_file=args.csv_file
+            csv_file=args.csv_file,
+            env=args.env
         )
         
         # Determine output file path

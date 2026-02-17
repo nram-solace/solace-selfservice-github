@@ -4,10 +4,11 @@
 # Takes absolute path of CSV file, converts to YAML, and processes with yaml_to_semp
 #
 # Usage:
-#     ./scripts/solace_self_service.sh --csv-file /absolute/path/to/file.csv [--verbose]
+#     ./scripts/solace_self_service.sh --csv-file <path/to/file.csv> --env <environment> [--verbose]
 #
 # Example:
-#     ./scripts/solace_self_service.sh --csv-file /workspace/input/csv/queues.csv --verbose
+#     ./scripts/solace_self_service.sh --csv-file input/csv/queues.csv --env dev --verbose
+#     ./scripts/solace_self_service.sh --csv-file input/csv/team1/queues.csv --env uat --verbose
 #
 
 set -e  # Exit on any error
@@ -53,6 +54,7 @@ warning() {
 
 # Parse command line arguments
 CSV_FILE=""
+ENV_VALUE=""
 VERBOSE=false
 
 while [[ $# -gt 0 ]]; do
@@ -61,23 +63,26 @@ while [[ $# -gt 0 ]]; do
             CSV_FILE="$2"
             shift 2
             ;;
+        --env)
+            ENV_VALUE="$2"
+            shift 2
+            ;;
         --verbose)
             VERBOSE=true
             shift
             ;;
         -h|--help)
-            echo "Usage: $0 --csv-file <csv-file> [--verbose]"
+            echo "Usage: $0 --csv-file <csv-file> --env <environment> [--verbose]"
             echo ""
             echo "Arguments:"
-            echo "  --csv-file    Absolute path to CSV file to process (must contain vpnName column)"
+            echo "  --csv-file    Path to CSV file to process"
+            echo "  --env         Target environment (inventory host name, e.g., dev, uat, prod)"
             echo "  --verbose     Enable verbose output"
             echo "  -h, --help    Show this help message"
             echo ""
             echo "Examples:"
-            echo "  $0 --csv-file /workspace/input/csv/queues.csv"
-            echo "  $0 --csv-file /workspace/input/csv/client-profiles.csv --verbose"
-            echo ""
-            echo "Note: The CSV file must contain a 'vpnName' column to identify the target environment."
+            echo "  $0 --csv-file input/csv/queues.csv --env dev"
+            echo "  $0 --csv-file input/csv/team1/queues.csv --env uat --verbose"
             exit 0
             ;;
         *)
@@ -91,6 +96,11 @@ done
 # Validate required arguments
 if [[ -z "$CSV_FILE" ]]; then
     error "CSV file path is required. Use --csv-file <path>"
+    exit 1
+fi
+
+if [[ -z "$ENV_VALUE" ]]; then
+    error "Environment is required. Use --env <environment>"
     exit 1
 fi
 
@@ -115,6 +125,7 @@ fi
 
 log "Version $VERSION"
 log "Processing CSV file: $CSV_FILE"
+log "Target environment: $ENV_VALUE"
 log "Project root: $PROJECT_ROOT"
 
 # Step 1: Convert CSV to YAML
@@ -123,6 +134,7 @@ log "Step 1: Converting CSV to YAML..."
 CSV_TO_YAML_CMD=(
     python3 "$SCRIPT_DIR/csv_to_yaml.py"
     --csv-file "$CSV_FILE"
+    --env "$ENV_VALUE"
 )
 
 if [[ "$VERBOSE" == "true" ]]; then

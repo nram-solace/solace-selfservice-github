@@ -1,4 +1,0 @@
-inventoryKey,clientProfileName,allowBridgeConnectionsEnabled,allowGuaranteedEndpointCreateEnabled,allowGuaranteedMsgReceiveEnabled,allowGuaranteedMsgSendEnabled,allowSharedSubscriptionsEnabled,allowTransactedSessionsEnabled
-nram-prod1,csv-test-cp1,true,true,true,true,true,true
-nram-prod1,csv-test-cp2,,,true,true,,
-

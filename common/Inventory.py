@@ -65,7 +65,6 @@ class Inventory:
                     else:
                         log.info ('Adding host: {} to the inventory'.format(name))
                         inv[name] = host_data
-                        inv[name]['environment'] = inv_file_data['inventory']['environment']
                         if 'sempPassword' not in host_data:
                             if os.environ.get('SEMP_PASSWORD') is not None:
                                 log.info ('Using password from env {} for {}'.format('SEMP_PASSWORD', name))
