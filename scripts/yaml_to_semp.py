@@ -175,19 +175,35 @@ def main(argv):
         log.info ('Inventory keys: {}'.format(str(inv_data.keys())))
         sys.exit(1)
     router = inv_data[app_id]
-    log.notice (f'Got the router config for {app_id}\n\tURL     : {router["sempUrl"]}\n\tUSER    : {router["sempUser"]}\n\tVPN     : {router["vpn"]}\n\tPASSWORD: read from env: $SEMP_PASSWORD' )
-
-
     cfg['router'] = router
-    cfg['router']['sempPassword'] = os.environ.get('SEMP_PASSWORD')
 
-    #print ('sempPassword: {}'.format(cfg['router']['sempPassword']))
+    # Password resolution for the target host only
+    # Priority: 1. SEMP_PASSWORD env var  2. sempPasswordEnc (encrypted)  3. sempPassword (plaintext)
+    semp_password_env = os.environ.get('SEMP_PASSWORD')
+    if semp_password_env:
+        cfg['router']['sempPassword'] = semp_password_env
+        password_source = 'read from env: $SEMP_PASSWORD'
+    elif 'sempPasswordEnc' in router:
+        try:
+            from scripts.crypto_utils import ConfigCrypto
+            crypto = ConfigCrypto()
+            cfg['router']['sempPassword'] = crypto.decrypt(router['sempPasswordEnc'])
+            password_source = 'decrypted from inventory file'
+        except ImportError:
+            log.error ('sempPasswordEnc found but cryptography library not installed')
+            log.info ('Install with: pip install cryptography')
+            sys.exit(1)
+        except ValueError as e:
+            log.error ('Failed to decrypt sempPasswordEnc: {}'.format(e))
+            sys.exit(1)
+    elif 'sempPassword' in router:
+        password_source = 'read from inventory file (plaintext)'
+    else:
+        log.error ('No password available for {}'.format(app_id))
+        log.info('Set SEMP_PASSWORD env var, or add sempPassword/sempPasswordEnc to inventory file')
+        sys.exit(1)
 
-    if 'sempPassword' not in router:
-        log.error ('sempPassword not set in config nor found in inventory for {}'.format(app_id))
-        log.info('Check the environment variable: {}'.format('SEMP_PASSWORD'))
-        #sys.exit(1)
-        
+    log.notice (f'Got the router config for {app_id}\n\tURL     : {router["sempUrl"]}\n\tUSER    : {router["sempUser"]}\n\tVPN     : {router["vpn"]}\n\tPASSWORD: {password_source}' )
 
     # create semp handler -- see common/SimpleSempHandler.py
     semp_h = SempHandler.SempHandler(cfg, verbose)

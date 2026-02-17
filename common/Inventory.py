@@ -65,33 +65,8 @@ class Inventory:
                     else:
                         log.info ('Adding host: {} to the inventory'.format(name))
                         inv[name] = host_data
-                        if 'sempPassword' not in host_data:
-                            if os.environ.get('SEMP_PASSWORD') is not None:
-                                log.info ('Using password from env {} for {}'.format('SEMP_PASSWORD', name))
-                                inv[name]['sempPassword'] = os.environ.get('SEMP_PASSWORD')
-                                    #inv[name]['SEMP_PASSWORD_ENV_VAR'] = semp_pass_env_var
-                            else:
-                                log.error ('Missing password for {}'.format(name))
-                                log.info ('Check the environment variable: {}'.format('SEMP_PASSWORD'))
-                            
-                            # TLA based passwords is hard to implement with github work flow & Secrets management
-                            # so we are going to use a single password for all TLAs.
-                            # ignore case in host name
-                            #semp_pass_env_var = 'SEMP_PASSWORD_{}_{}'.format(host_data['host'].upper(), host_data['sempUser'].upper())
-                            #semp_pass_env_var = semp_pass_env_var.replace('.', '_').replace('-', '_')
-                            #nv[name]['SEMP_PASSWORD_ENV_VAR'] = semp_pass_env_var
-                            # check if password is in the environment
-                            #if os.environ.get(semp_pass_env_var) is None:
-                            #    log.warning ('SEMP_PASSWORD environment variable ({}) not set for {}'.format(semp_pass_env_var, name))
-                            #    if os.environ.get('SEMP_PASSWORD') is not None:
-                            #        log.notice ('Using password from env {} for {}'.format('SEMP_PASSWORD', name))
-                            #        inv[name]['sempPassword'] = os.environ.get('SEMP_PASSWORD')
-                            #        #inv[name]['SEMP_PASSWORD_ENV_VAR'] = semp_pass_env_var
-                            #    else:
-                            #        log.error ('Missing password for {}'.format(name))
-                            #else:
-                            #    log.info ('Using password from env {} for {} in environment'.format(semp_pass_env_var, name))
-                            #    inv[name]['sempPassword'] = os.environ.get(semp_pass_env_var)
+                        # Password resolution is deferred to yaml_to_semp.py
+                        # Only the target host's password is resolved (not all hosts)
                                 
                     
         self.inv = inv
