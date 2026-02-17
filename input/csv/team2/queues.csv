@@ -1,5 +1,0 @@
-env,queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
-dev,team2-dev-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team2/dev/payments/>
-dev,team2-dev-queue2,2000,non-exclusive,consume,default,false,10,true,,"team2/dev/events/*,team2/dev/alerts/*"
-uat,team2-uat-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team2/uat/payments/>
-uat,team2-uat-queue2,2000,non-exclusive,consume,default,false,10,true,,"team2/uat/events/*,team2/uat/alerts/*"

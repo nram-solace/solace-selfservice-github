@@ -1,12 +1,10 @@
 # Solace router and access info for team1
-# Each team gets one inventory file with all their environment entries.
-# The 'env' column in CSV selects which environment to target.
+# The --env CLI parameter selects which host entry to target.
 
 ---
 inventory:
-    environment: "team1"
     hosts:
-    # name matches the env value used in CSV files
+    # name matches the --env value used on the command line
     - name: "dev"
       host: "localhost"
       sempUrl: "http://localhost:8080"

@@ -1,0 +1,3 @@
+queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
+team2-uat-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team2/uat/payments/>
+team2-uat-queue2,2000,non-exclusive,consume,default,false,10,true,,"team2/uat/events/*,team2/uat/alerts/*"

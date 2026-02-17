@@ -1,27 +1,18 @@
-# Solace router and access info for the application
+# Solace router and access info for sample team
+# The --env CLI parameter selects which environment to target.
 
 ---
 inventory:
-    # For password from env, the variable read is:
-    # SEMP_PASSWORD_<host>_<sempUser> all in uppercase and _ seperator
-    # Eg: SEMP_PASSWORD_LOCAL_HOST_ADMIN
-
-    # env is not currently used.
-    # all hosts in the inventory file are in the same environment
-    environment: "test"
     hosts:
-    # name is a unique string across all inventory files
-    # this will be used in the input/default.yaml file to reference the host
-    - name: "nram-local-dev"
-      host: "local-host"
+    # name matches the --env value used on the command line
+    - name: "dev"
+      host: "localhost"
       sempUrl: "http://localhost:8080"
       sempUser: "admin"
-      #sempPassword: "secret" # read from env
       vpn: "default"
 
-    - name: "nram-remote-dev"
-      host: "nram-latitude"
-      sempUrl: "http://nram-latitude:8080"
+    - name: "uat"
+      host: "localhost"
+      sempUrl: "http://localhost:8080"
       sempUser: "admin"
-      #sempPassword: "secret" # read from env
       vpn: "default"
