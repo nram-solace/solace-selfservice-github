@@ -12,6 +12,10 @@
 requests>=2.25.1
 PyYAML>=5.4.1
 #
+# Optional: required only if using encrypted passwords (sempPasswordEnc) in inventory files
+# pip install cryptography
+#cryptography>=41.0.0
+#
 # Useful packages
 #
 #solace-pubsubplus>=1.8.0
