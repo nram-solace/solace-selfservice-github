@@ -178,12 +178,8 @@ def main(argv):
     cfg['router'] = router
 
     # Password resolution for the target host only
-    # Priority: 1. SEMP_PASSWORD env var  2. sempPasswordEnc (encrypted)  3. sempPassword (plaintext)
-    semp_password_env = os.environ.get('SEMP_PASSWORD')
-    if semp_password_env:
-        cfg['router']['sempPassword'] = semp_password_env
-        password_source = 'read from env: $SEMP_PASSWORD'
-    elif 'sempPasswordEnc' in router:
+    # Priority: 1. sempPasswordEnc (encrypted)  2. sempPassword (plaintext)  3. SEMP_PASSWORD env var
+    if 'sempPasswordEnc' in router:
         try:
             from scripts.crypto_utils import ConfigCrypto
             crypto = ConfigCrypto()
@@ -198,6 +194,9 @@ def main(argv):
             sys.exit(1)
     elif 'sempPassword' in router:
         password_source = 'read from inventory file (plaintext)'
+    elif os.environ.get('SEMP_PASSWORD'):
+        cfg['router']['sempPassword'] = os.environ.get('SEMP_PASSWORD')
+        password_source = 'read from env: $SEMP_PASSWORD'
     else:
         log.error ('No password available for {}'.format(app_id))
         log.info('Set SEMP_PASSWORD env var, or add sempPassword/sempPasswordEnc to inventory file')
