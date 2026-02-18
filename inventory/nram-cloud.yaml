@@ -1,0 +1,34 @@
+# Solace router and access info for team3
+# The --env CLI parameter selects which host entry to target.
+
+---
+inventory:
+    hosts:
+    # environment matches the --env value used on the command line
+    - environment: "dev"
+      host: "nram-dr-test"
+      sempUrl: "https://nram-dev.messaging.solace.cloud:943"
+      sempUser: "nram-dr-test-service-admin"
+      sempPasswordEnc: "Z0FBQUFBQnBsaXB2MlZmX0lGRFB2RktPSVc3cDNQTlJRVEZ0VWlMWEhLTG5kN1ZydEg1WVlLOHZzTmdJR3phUV9JbzBPYjV2cEdsd0U5djlsdG9xVEkzS3ZlNldJa3k2THZtTTVKNkg2TFpvRVd2SnltQmdQX3M9" # read from env
+      vpn: "nram-dr-test-service"
+    
+    - environment: "poc"
+      host: "nram-poc"
+      sempUrl: "https://nram-poc2.messaging.solace.cloud:943"
+      sempUser: "aks-poc2-admin"
+      #sempPassword: "secret" # read from env
+      vpn: "aks-poc2"
+
+    - environment: "test"
+      host: "nram-dt-test"
+      sempUrl: "https://nramtest.messaging.solace.cloud:943"
+      sempUser: "nram-dt-test-admin"
+      sempPasswordEnc: "Z0FBQUFBQnBsaWxBTEdOd1d4cXZlWGlGM0hKUVV3YVV2VHFJQXJaQ1BOcFUzYTYwcWd1M2hNeHBJVDBnUlhkZU1vUjFvMmFLaVJYMTd0c0Z5SWhqYjdzMVI0dHVrb3JranBVN2ZGUVYwOUJaWDhCZVJWMmFWQUk9"
+      vpn: "nram-dt-test"
+      
+    - environment: "prod"
+      host: "nram-gke-poc"
+      sempUrl: "https://nram-prod.messaging.solace.cloud:943"
+      sempUser: "nram-prod1-admin"
+      sempPasswordEnc: "Z0FBQUFBQnBsaWl3QkJCNU10UHVadEdOUllCQ0s4WFd1MmdseUJNVGFhajVOakdTY3dES1F5U0V3V21RMm9WODVZVnlJUms4bDZ4LVRXUmd0WjFGMVFhOWZYZjcyTUZkX1ZSSDdlZW9jcjJMVjZZZGZmVDRNM1E9"
+      vpn: "nram-prod1"
