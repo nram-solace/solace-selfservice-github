@@ -1,12 +1,16 @@
 name: Process Queues CSV
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'input/csv/**/queues-*.csv'
   workflow_dispatch:
     inputs:
       csv_file:
-        description: 'Path to CSV file (e.g., input/csv/team1/queues.csv)'
+        description: 'Path to CSV file (e.g., input/csv/team1/queues-dev.csv)'
         required: true
-        default: 'input/csv/sample/queues.csv'
+        default: 'input/csv/sample/queues-dev.csv'
       environment:
         description: 'Target environment (e.g., dev, uat, prod)'
         required: true
@@ -20,6 +24,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,35 +35,71 @@ jobs:
       - name: Install dependencies
         run: pip install requests pyyaml
 
-      - name: Extract team name from path
-        id: extract_team
+      - name: Detect CSV files to process
+        id: detect_files
         run: |
-          CSV_FILE="${{ github.event.inputs.csv_file }}"
-          echo "CSV_FILE=$CSV_FILE" >> $GITHUB_ENV
-          if [[ "$CSV_FILE" =~ input/csv/([^/]+)/queues\.csv ]]; then
-            TEAM_NAME="${BASH_REMATCH[1]}"
-            echo "TEAM=$TEAM_NAME" >> $GITHUB_ENV
-            echo "Team identified: $TEAM_NAME"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "Trigger: push — detecting changed queue CSV files"
+            FILES=$(git diff --name-only --diff-filter=ACM HEAD~1 | grep -E 'input/csv/[^/]+/queues-[^/]+\.csv$' || true)
+            if [ -z "$FILES" ]; then
+              echo "No queue CSV files changed in this push"
+              echo "SKIP=true" >> $GITHUB_ENV
+            else
+              echo "Changed files:"
+              echo "$FILES"
+              echo "FILES<<EOF" >> $GITHUB_ENV
+              echo "$FILES" >> $GITHUB_ENV
+              echo "EOF" >> $GITHUB_ENV
+              echo "SKIP=false" >> $GITHUB_ENV
+            fi
           else
-            echo "TEAM=default" >> $GITHUB_ENV
-            echo "Using default team (legacy flat path)"
+            echo "Trigger: workflow_dispatch"
+            echo "FILES=${{ github.event.inputs.csv_file }}" >> $GITHUB_ENV
+            echo "DISPATCH_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+            echo "SKIP=false" >> $GITHUB_ENV
           fi
 
-      - name: Run solace_self_service.sh
+      - name: Process queue CSV files
+        if: env.SKIP != 'true'
         run: |
-          echo "Processing queues for team: ${{ env.TEAM }}"
-          echo "CSV file: ${{ env.CSV_FILE }}"
-          echo "Environment: ${{ github.event.inputs.environment }}"
-          bash scripts/solace_self_service.sh --csv-file ${{ env.CSV_FILE }} --env ${{ github.event.inputs.environment }} --verbose
+          while IFS= read -r CSV_FILE; do
+            [ -z "$CSV_FILE" ] && continue
+
+            # Extract team from path
+            if [[ "$CSV_FILE" =~ input/csv/([^/]+)/queues(-[^/]+)?\.csv ]]; then
+              TEAM="${BASH_REMATCH[1]}"
+            else
+              TEAM="default"
+            fi
+
+            # Extract environment from filename
+            if [ -n "$DISPATCH_ENV" ]; then
+              ENV="$DISPATCH_ENV"
+            else
+              BASENAME=$(basename "$CSV_FILE" .csv)
+              ENV="${BASENAME#queues-}"
+            fi
+
+            echo "========================================="
+            echo "Processing: $CSV_FILE"
+            echo "  Team: $TEAM"
+            echo "  Environment: $ENV"
+            echo "========================================="
+            bash scripts/solace_self_service.sh --csv-file "$CSV_FILE" --env "$ENV" --verbose
+          done <<< "$FILES"
         env:
           SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
 
       - name: Summary
+        if: env.SKIP != 'true'
         run: |
           echo "## Queues Processed Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Team**: ${{ env.TEAM }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Environment**: ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **File**: ${{ env.CSV_FILE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Files**:" >> $GITHUB_STEP_SUMMARY
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            echo "  - \`$f\`" >> $GITHUB_STEP_SUMMARY
+          done <<< "$FILES"
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

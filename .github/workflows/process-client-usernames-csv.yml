@@ -1,6 +1,11 @@
 name: Process Client Usernames CSV
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'input/csv/**/client-usernames-*.csv'
+      - 'input/csv/**/client-profiles-*.csv'
   workflow_dispatch:
     inputs:
       csv_file:
@@ -20,6 +25,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,58 +36,103 @@ jobs:
       - name: Install dependencies
         run: pip install requests pyyaml
 
-      - name: Extract team name from path
-        id: extract_team
+      - name: Detect files to process
+        id: detect_files
         run: |
-          CSV_DIR="${{ github.event.inputs.csv_file }}"
-          echo "CSV_DIR=$CSV_DIR" >> $GITHUB_ENV
-          if [[ "$CSV_DIR" =~ input/csv/([^/]+)$ ]]; then
-            TEAM_NAME="${BASH_REMATCH[1]}"
-            echo "TEAM=$TEAM_NAME" >> $GITHUB_ENV
-            echo "Team identified: $TEAM_NAME"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "Trigger: push — detecting changed client CSV files"
+            FILES=$(git diff --name-only --diff-filter=ACM HEAD~1 | grep -E 'input/csv/[^/]+/(client-usernames|client-profiles)-[^/]+\.csv$' || true)
+            if [ -z "$FILES" ]; then
+              echo "No client CSV files changed in this push"
+              echo "SKIP=true" >> $GITHUB_ENV
+            else
+              echo "Changed files:"
+              echo "$FILES"
+              # Deduplicate by (dir, env) pairs
+              PAIRS=$(echo "$FILES" | while IFS= read -r f; do
+                DIR=$(dirname "$f")
+                BASENAME=$(basename "$f" .csv)
+                ENV="${BASENAME#client-usernames-}"
+                ENV="${ENV#client-profiles-}"
+                echo "${DIR}|${ENV}"
+              done | sort -u)
+              echo "Unique (dir, env) pairs:"
+              echo "$PAIRS"
+              echo "PAIRS<<EOF" >> $GITHUB_ENV
+              echo "$PAIRS" >> $GITHUB_ENV
+              echo "EOF" >> $GITHUB_ENV
+              echo "SKIP=false" >> $GITHUB_ENV
+            fi
           else
-            echo "TEAM=default" >> $GITHUB_ENV
-            echo "Using default team (legacy flat path)"
+            echo "Trigger: workflow_dispatch"
+            echo "PAIRS=${{ github.event.inputs.csv_file }}|${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+            echo "SKIP=false" >> $GITHUB_ENV
           fi
 
-      - name: Process ACL profiles (dependency)
+      - name: Process client username dependency chains
+        if: env.SKIP != 'true'
         run: |
-          ACL_FILE="${{ env.CSV_DIR }}/acl-profiles.csv"
-          if [ -f "$ACL_FILE" ]; then
-            echo "Processing ACL profiles: $ACL_FILE"
-            bash scripts/solace_self_service.sh --csv-file "$ACL_FILE" --env ${{ github.event.inputs.environment }} --verbose
-          else
-            echo "No ACL profiles CSV found at $ACL_FILE, skipping"
-          fi
-        env:
-          SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
+          while IFS= read -r PAIR; do
+            [ -z "$PAIR" ] && continue
+            CSV_DIR="${PAIR%%|*}"
+            ENV="${PAIR##*|}"
 
-      - name: Process client profiles (dependency)
-        run: |
-          CP_FILE="${{ env.CSV_DIR }}/client-profiles.csv"
-          if [ -f "$CP_FILE" ]; then
-            echo "Processing client profiles: $CP_FILE"
-            bash scripts/solace_self_service.sh --csv-file "$CP_FILE" --env ${{ github.event.inputs.environment }} --verbose
-          else
-            echo "No client profiles CSV found at $CP_FILE, skipping"
-          fi
-        env:
-          SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
+            # Extract team from path
+            if [[ "$CSV_DIR" =~ input/csv/([^/]+)$ ]]; then
+              TEAM="${BASH_REMATCH[1]}"
+            else
+              TEAM="default"
+            fi
 
-      - name: Process client usernames
-        run: |
-          CU_FILE="${{ env.CSV_DIR }}/client-usernames.csv"
-          echo "Processing client usernames: $CU_FILE"
-          bash scripts/solace_self_service.sh --csv-file "$CU_FILE" --env ${{ github.event.inputs.environment }} --verbose
+            echo "========================================="
+            echo "Processing dependency chain"
+            echo "  Directory: $CSV_DIR"
+            echo "  Team: $TEAM"
+            echo "  Environment: $ENV"
+            echo "========================================="
+
+            # Step 1: ACL profiles (dependency)
+            ACL_FILE="${CSV_DIR}/acl-profiles-${ENV}.csv"
+            if [ -f "$ACL_FILE" ]; then
+              echo "Processing ACL profiles: $ACL_FILE"
+              bash scripts/solace_self_service.sh --csv-file "$ACL_FILE" --env "$ENV" --verbose
+            else
+              echo "No ACL profiles CSV found at $ACL_FILE, skipping"
+            fi
+
+            # Step 2: Client profiles (dependency)
+            CP_FILE="${CSV_DIR}/client-profiles-${ENV}.csv"
+            if [ -f "$CP_FILE" ]; then
+              echo "Processing client profiles: $CP_FILE"
+              bash scripts/solace_self_service.sh --csv-file "$CP_FILE" --env "$ENV" --verbose
+            else
+              echo "No client profiles CSV found at $CP_FILE, skipping"
+            fi
+
+            # Step 3: Client usernames
+            CU_FILE="${CSV_DIR}/client-usernames-${ENV}.csv"
+            if [ -f "$CU_FILE" ]; then
+              echo "Processing client usernames: $CU_FILE"
+              bash scripts/solace_self_service.sh --csv-file "$CU_FILE" --env "$ENV" --verbose
+            else
+              echo "No client usernames CSV found at $CU_FILE, skipping"
+            fi
+          done <<< "$PAIRS"
         env:
           SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
 
       - name: Summary
+        if: env.SKIP != 'true'
         run: |
           echo "## Client Usernames Processed Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Team**: ${{ env.TEAM }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Environment**: ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Directory**: ${{ env.CSV_DIR }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Processed**:" >> $GITHUB_STEP_SUMMARY
+          while IFS= read -r p; do
+            [ -z "$p" ] && continue
+            DIR="${p%%|*}"
+            ENV="${p##*|}"
+            echo "  - \`$DIR\` (env: \`$ENV\`)" >> $GITHUB_STEP_SUMMARY
+          done <<< "$PAIRS"
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
