@@ -48,9 +48,9 @@ class Inventory:
                 inv_file_data = yaml_h.read_config_file(team_file)
                 log.debug (f'Read from {team_file} {inv_file_data}')
                 for host_data in inv_file_data['inventory']['hosts']:
-                    name = host_data['name']
-                    log.info ('Adding host: {} to the inventory'.format(name))
-                    inv[name] = host_data
+                    environment = host_data['environment']
+                    log.info ('Adding host: {} to the inventory'.format(environment))
+                    inv[environment] = host_data
                 self.inv = inv
                 log.info ('Inventory read from {} hosts'.format(len(inv)))
                 return inv
@@ -70,14 +70,14 @@ class Inventory:
                 log.info ('Reading inventory file: {}'.format(inv_file))
                 inv_file_data = yaml_h.read_config_file(inv_file)
                 log.debug (f'Read from {inv_file} {inv_file_data}')
-                # Get inventory/hosts/name as key 
+                # Get inventory/hosts/environment as key
                 for host_data in inv_file_data['inventory']['hosts']:
-                    name = host_data['name']
-                    if name in inv:
-                        log.error ('Duplicate host entry: {} ignored'.format(name))
+                    environment = host_data['environment']
+                    if environment in inv:
+                        log.error ('Duplicate host entry: {} ignored'.format(environment))
                     else:
-                        log.info ('Adding host: {} to the inventory'.format(name))
-                        inv[name] = host_data
+                        log.info ('Adding host: {} to the inventory'.format(environment))
+                        inv[environment] = host_data
                         # Password resolution is deferred to yaml_to_semp.py
                         # Only the target host's password is resolved (not all hosts)
                                 

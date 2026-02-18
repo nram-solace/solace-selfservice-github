@@ -1,4 +1,4 @@
-# Solace router and access info for team3
+# Solace router and access info for team4
 # The --env CLI parameter selects which host entry to target.
 
 ---
@@ -6,10 +6,11 @@ inventory:
     hosts:
     # environment matches the --env value used on the command line
     - environment: "dev"
-      host: "localhost"
-      sempUrl: "http://localhost:8080"
-      sempUser: "admin"
-      vpn: "test3-dev-vpn"
+      host: "aks-poc2"
+      sempUrl: "https://nram-poc2.messaging.solace.cloud:943"
+      sempUser: "aks-poc2-admin"
+      #sempPassword: "secret" # read from env
+      vpn: "aks-poc2"
 
     - environment: "uat"
       host: "localhost"

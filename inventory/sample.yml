@@ -18,27 +18,27 @@
 ---
 inventory:
     hosts:
-    # name matches the --env value used on the command line
-
-    # Example with encrypted password (recommended for shared/production use)
-    # The value below is "admin" encrypted with default key
-    - name: "dev"
-      host: "localhost"
-      sempUrl: "http://localhost:8080"
-      sempUser: "admin"
-      sempPasswordEnc: "Z0FBQUFBQnBsUEZOeU9CVFdaTGRNZmhvdG9Cam1TWGIzRFNwVEdVMkxQQ0hxLXpZNTZnZmMwcmZYbWFlUFp3cGZVOS14TF9BSmxhdW42NnEyUW9ia2gtVkhiNmpfbTdpWkE9PQ=="
-      vpn: "default"
+    # environment matches the --env value used on the command line
 
     # Example with plaintext password (for local dev only)
-    - name: "uat"
+    - environment: "dev"
       host: "localhost"
       sempUrl: "http://localhost:8080"
       sempUser: "admin"
       sempPassword: "admin"
       vpn: "default"
+
+    # Example with encrypted password (recommended for shared/production use)
+    # The value below is "admin" encrypted with default key
+    - environment: "uat"
+      host: "localhost"
+      sempUrl: "http://localhost:8080"
+      sempUser: "admin"
+      sempPasswordEnc: "Z0FBQUFBQnBsUEZOeU9CVFdaTGRNZmhvdG9Cam1TWGIzRFNwVEdVMkxQQ0hxLXpZNTZnZmMwcmZYbWFlUFp3cGZVOS14TF9BSmxhdW42NnEyUW9ia2gtVkhiNmpfbTdpWkE9PQ=="
+      vpn: "default"
     
     # Example that relies on SEMP_PASSWORD env var at runtime (recommended for CI/CD pipelines)
-    - name: "prod"
+    - environment: "prod"
       host: "localhost"
       sempUrl: "http://localhost:8080"
       sempUser: "admin"
