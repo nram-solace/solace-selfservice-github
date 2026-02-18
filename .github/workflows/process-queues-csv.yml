@@ -2,6 +2,7 @@ name: Process Queues CSV
 
 on:
   push:
+    branches-ignore: [main, master]
     paths:
       - 'input/csv/**/queues-*.csv'
   workflow_dispatch:
