@@ -1,3 +1,0 @@
-queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
-team3-uat-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team3/uat/accounts/>
-team3-uat-queue2,2000,non-exclusive,consume,default,false,10,true,,"team3/uat/events/*,team3/uat/updates/*"
