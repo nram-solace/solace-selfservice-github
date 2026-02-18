@@ -1,3 +1,0 @@
-queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
-team2-dev-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team2/dev/payments/>
-team2-dev-queue2,2000,non-exclusive,consume,default,false,10,true,,"team2/dev/events/*,team2/dev/alerts/*"
