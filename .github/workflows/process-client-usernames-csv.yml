@@ -120,6 +120,7 @@ jobs:
           done <<< "$PAIRS"
         env:
           SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
+          PASSWORD_ENC_KEY: ${{ secrets.PASSWORD_ENC_KEY }}
 
       - name: Summary
         if: env.SKIP != 'true'
