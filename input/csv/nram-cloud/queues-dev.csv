@@ -1,3 +1,4 @@
 queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
 nram-queue1,1000,exclusive,consume,default,true,5,true,AUTO,nram/dev/accounts/>
 nram-queue2,2000,non-exclusive,consume,default,false,10,true,,"nram/dev/events/*,nram/dev/updates/*"
+nram-queue3,2000,non-exclusive,consume,default,false,10,true,,"nram/dev/events/*,nram/dev/updates/*"
