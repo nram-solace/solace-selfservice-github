@@ -3,15 +3,15 @@
 ---
 inventory:
     hosts:
-    # name matches the --env value used on the command line
-    - name: "nram-local"
+    # environment matches the --env value used on the command line
+    - environment: "nram-local"
       host: "localhost"
       sempUrl: "http://localhost:8080"
       sempUser: "admin"
       #sempPassword: "secret" # read from env
       vpn: "default"
 
-    - name: "nram-remote"
+    - environment: "nram-remote"
       host: "nram-latitude"
       sempUrl: "http://nram-latitude:8080"
       sempUser: "admin"

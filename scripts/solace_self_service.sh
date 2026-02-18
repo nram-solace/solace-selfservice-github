@@ -15,7 +15,7 @@ set -e  # Exit on any error
 
 # Script configuration
 SCRIPT_PREFIX="Solace_Self_Service"
-VERSION="2.5.2-1009"
+VERSION="3.0.0-0218"
 
 # Colors for output
 RED='\033[0;31m'
@@ -76,7 +76,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Arguments:"
             echo "  --csv-file    Path to CSV file to process"
-            echo "  --env         Target environment (inventory host name, e.g., dev, uat, prod)"
+            echo "  --env         Target environment (inventory host environment, e.g., dev, uat, prod)"
             echo "  --verbose     Enable verbose output"
             echo "  -h, --help    Show this help message"
             echo ""

@@ -12,7 +12,7 @@ Example:
 """
 
 # Version information
-VERSION = "2.5.2-1009"
+VERSION = "3.0.0-0218"
 
 import sys
 import os
@@ -103,7 +103,7 @@ class CSVToYAMLConverter:
         )
 
     def load_inventory_mapping(self, team: Optional[str] = None) -> Dict[str, str]:
-        """Load inventory files and create name->vpn mapping.
+        """Load inventory files and create environment->vpn mapping.
 
         When team is specified, looks for inventory/<team>.yaml first.
         Falls back to scanning all inventory files for backward compatibility.
@@ -147,7 +147,7 @@ class CSVToYAMLConverter:
         return name_to_vpn
 
     def _scan_inventory_dir(self, inv_dir: str, recursive: bool = False) -> Dict[str, str]:
-        """Scan an inventory directory for YAML files and build name->vpn mapping."""
+        """Scan an inventory directory for YAML files and build environment->vpn mapping."""
         name_to_vpn = {}
 
         if recursive:
@@ -167,7 +167,7 @@ class CSVToYAMLConverter:
         return name_to_vpn
 
     def _load_single_inventory_file(self, inventory_file: str) -> Dict[str, str]:
-        """Load a single inventory file and return name->vpn mapping."""
+        """Load a single inventory file and return environment->vpn mapping."""
         try:
             inventory_config = self.yaml_handler.read_config_file(inventory_file)
             inventory = inventory_config.get('inventory', {})
@@ -175,7 +175,7 @@ class CSVToYAMLConverter:
 
             name_to_vpn = {}
             for host in hosts:
-                name = host.get('name')
+                name = host.get('environment')
                 vpn = host.get('vpn')
                 if name and vpn:
                     name_to_vpn[name] = vpn
@@ -384,7 +384,7 @@ class CSVToYAMLConverter:
 
         Args:
             objects: List of parsed CSV row dictionaries
-            env: Target environment (inventory host name, e.g., dev, uat, prod)
+            env: Target environment (inventory host environment, e.g., dev, uat, prod)
             team: Team name resolved from CSV path (scopes inventory lookup)
 
         Returns:
@@ -424,7 +424,7 @@ class CSVToYAMLConverter:
         Args:
             verbose: Enable verbose output
             csv_file: Path to CSV input file
-            env: Target environment (inventory host name)
+            env: Target environment (inventory host environment)
         """
 
         # Determine object type from CSV filename
@@ -504,7 +504,7 @@ def main():
                        help='Verbose output. Use -vvv for more verbose output')
     parser.add_argument('--csv-file', required=True, help='Path to CSV file')
     parser.add_argument('--env', '-e', required=True,
-                       help='Target environment (inventory host name, e.g., dev, uat, prod)')
+                       help='Target environment (inventory host environment, e.g., dev, uat, prod)')
     parser.add_argument('--output-file', help='Output YAML file path (optional)')
     
     args = parser.parse_args()

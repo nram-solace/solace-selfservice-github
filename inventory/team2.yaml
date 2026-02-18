@@ -4,14 +4,14 @@
 ---
 inventory:
     hosts:
-    # name matches the --env value used on the command line
-    - name: "dev"
+    # environment matches the --env value used on the command line
+    - environment: "dev"
       host: "localhost"
       sempUrl: "http://localhost:8080"
       sempUser: "admin"
       vpn: "test2-dev-vpn"
 
-    - name: "uat"
+    - environment: "uat"
       host: "localhost"
       sempUrl: "http://localhost:8080"
       sempUser: "admin"
