@@ -2,6 +2,7 @@ name: Process Client Usernames CSV
 
 on:
   push:
+    branches-ignore: [main, master]
     paths:
       - 'input/csv/**/client-usernames-*.csv'
       - 'input/csv/**/client-profiles-*.csv'
