@@ -2,7 +2,6 @@ name: Process ACL Profiles CSV
 
 on:
   push:
-    branches: [main]
     paths:
       - 'input/csv/**/acl-profiles-*.csv'
   workflow_dispatch:
