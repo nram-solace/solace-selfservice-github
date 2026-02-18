@@ -10,6 +10,7 @@ inventory:
       sempUrl: "https://nram-dev.messaging.solace.cloud:943"
       sempUser: "nram-dr-test-service-admin"
       sempPasswordEnc: "Z0FBQUFBQnBsalJHRmliXzEyQWgzMDZUYVZPMkFzeFRkSzh6eG9LNEFib0M1RTJ0Vm5ISGxVV1RUejJiUUpjM3E2OWpuUE5RY2NOQjlIWm5xcGotejRGQXF1Q2owbFJ4aXV0WmJTUktURmhhRS0wVFpBRzIzaDQ9"
+      vpn: "nram-dr-test-service"
     
     - environment: "poc"
       host: "nram-poc"
