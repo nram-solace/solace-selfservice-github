@@ -18,7 +18,10 @@ on:
 
 jobs:
   process_queues:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, enterprise, docker, Linux ]
+    container:
+      image: ghcr.io/northerntrust-internal/ghe/python:3.9  
+    
     name: Process Queues
 
     steps:
@@ -33,11 +36,13 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install requests pyyaml cryptography
+        run: pip install requests pyyaml # cryptography
 
       - name: Detect CSV files to process
         id: detect_files
+        shell: bash
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "Trigger: push — detecting changed queue CSV files"
             BEFORE="${{ github.event.before }}"
@@ -69,6 +74,7 @@ jobs:
 
       - name: Process queue CSV files
         if: env.SKIP != 'true'
+        shell: bash
         run: |
           while IFS= read -r CSV_FILE; do
             [ -z "$CSV_FILE" ] && continue
@@ -101,6 +107,7 @@ jobs:
 
       - name: Summary
         if: env.SKIP != 'true'
+        shell: bash
         run: |
           echo "## Queues Processed Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
