@@ -18,3 +18,5 @@ pkg/**
 tmp/**
 logs/**
 */__pycache__/**
+_github
+.DS_Store
