@@ -2,7 +2,7 @@ name: Process Client Usernames CSV
 
 on:
   push:
-    branches-ignore: [main, master]
+    branches: [dev, int, sys, uat, prod]
     paths:
       - 'input/csv/**/client-usernames-*.csv'
       - 'input/csv/**/client-profiles-*.csv'
@@ -82,6 +82,13 @@ jobs:
               TEAM="${BASH_REMATCH[1]}"
             else
               TEAM="default"
+            fi
+
+            # Branch/env consistency guard: on push, the file env must match the
+            # deploy branch so a wrong-env CSV cannot provision the wrong broker.
+            if [ "${{ github.event_name }}" = "push" ] && [ "$ENV" != "${{ github.ref_name }}" ]; then
+              echo "::warning::Skipping $CSV_DIR — env '$ENV' does not match branch '${{ github.ref_name }}'"
+              continue
             fi
 
             echo "========================================="

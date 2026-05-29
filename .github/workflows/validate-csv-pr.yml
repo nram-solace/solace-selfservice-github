@@ -1,0 +1,113 @@
+name: Validate CSV (PR)
+
+# Validation-only workflow for pull requests into environment branches.
+# Runs CSV -> YAML conversion to exercise header / valid-tag / team-path checks.
+# It does NOT connect to any broker and has NO access to SEMP secrets.
+
+on:
+  pull_request:
+    branches: [dev, int, sys, uat, prod]
+    paths:
+      - 'input/csv/**'
+
+jobs:
+  validate_csv:
+    runs-on: ubuntu-latest
+    name: Validate changed CSV files
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install requests pyyaml cryptography
+
+      - name: Detect changed CSV files
+        id: detect_files
+        run: |
+          BASE_REF="${{ github.base_ref }}"
+          echo "PR base branch: $BASE_REF"
+          git fetch origin "$BASE_REF" --depth=1 || true
+          FILES=$(git diff --name-only --diff-filter=ACM "origin/${BASE_REF}...HEAD" \
+            | grep -E 'input/csv/[^/]+/(queues|acl-profiles|client-usernames|client-profiles|subscriptions)-[^/]+\.csv$' || true)
+          if [ -z "$FILES" ]; then
+            echo "No object CSV files changed in this PR"
+            echo "SKIP=true" >> $GITHUB_ENV
+          else
+            echo "Changed files:"
+            echo "$FILES"
+            echo "FILES<<EOF" >> $GITHUB_ENV
+            echo "$FILES" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+            echo "SKIP=false" >> $GITHUB_ENV
+          fi
+
+      - name: Validate CSV files (CSV -> YAML only)
+        if: env.SKIP != 'true'
+        run: |
+          BASE_REF="${{ github.base_ref }}"
+          FAILED=0
+          MISMATCH=0
+          mkdir -p /tmp/validate-yaml
+          {
+            echo "## CSV Validation Results"
+            echo ""
+            echo "- **PR base branch (env)**: \`${BASE_REF}\`"
+            echo "- **Files validated**:"
+          } >> $GITHUB_STEP_SUMMARY
+
+          while IFS= read -r CSV_FILE; do
+            [ -z "$CSV_FILE" ] && continue
+
+            BASENAME=$(basename "$CSV_FILE" .csv)
+            # Strip the known object-type prefix to obtain the env suffix
+            ENV="${BASENAME#queues-}"
+            ENV="${ENV#acl-profiles-}"
+            ENV="${ENV#client-usernames-}"
+            ENV="${ENV#client-profiles-}"
+            ENV="${ENV#subscriptions-}"
+
+            echo "========================================="
+            echo "Validating: $CSV_FILE (env: $ENV)"
+            echo "========================================="
+
+            STATUS="ok"
+            if ! python3 scripts/csv_to_yaml.py \
+                  --csv-file "$CSV_FILE" \
+                  --env "$ENV" \
+                  --output-file "/tmp/validate-yaml/${BASENAME}.yaml" -v; then
+              STATUS="FAILED validation"
+              FAILED=1
+            fi
+
+            # Branch/env consistency guard (warning only on PR)
+            if [ "$ENV" != "$BASE_REF" ]; then
+              STATUS="${STATUS} | WARNING: env '${ENV}' != base branch '${BASE_REF}'"
+              MISMATCH=1
+            fi
+
+            echo "  - \`$CSV_FILE\` (env: \`$ENV\`) — ${STATUS}" >> $GITHUB_STEP_SUMMARY
+          done <<< "$FILES"
+
+          if [ "$MISMATCH" = "1" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "> One or more files target an environment that differs from the PR base branch." >> $GITHUB_STEP_SUMMARY
+            echo "> On merge, the deploy guard will SKIP those files." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$FAILED" = "1" ]; then
+            echo "CSV validation failed for one or more files"
+            exit 1
+          fi
+          echo "All changed CSV files validated successfully"
+
+      - name: No CSV changes
+        if: env.SKIP == 'true'
+        run: echo "No object CSV files changed — nothing to validate."
