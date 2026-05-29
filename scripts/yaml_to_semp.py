@@ -178,7 +178,13 @@ def main(argv):
     cfg['router'] = router
 
     # Password resolution for the target host only
-    # Priority: 1. sempPasswordEnc (encrypted)  2. sempPassword (plaintext)  3. SEMP_PASSWORD env var
+    # Priority: 1. sempPasswordEnc (encrypted)  2. sempPassword (plaintext)
+    #           3. SEMP_<ENV>_PASSWORD env var  4. SEMP_PASSWORD env var
+    # The env name is the inventory key (params.vpnName), upper-cased with
+    # non-alphanumeric chars mapped to '_' to match GitHub secret naming
+    # (e.g. env 'sys' -> $SEMP_SYS_PASSWORD).
+    env_pw_var = 'SEMP_{}_PASSWORD'.format(
+        ''.join(c if c.isalnum() else '_' for c in str(app_id)).upper())
     if 'sempPasswordEnc' in router:
         try:
             from scripts.crypto_utils import ConfigCrypto
@@ -194,12 +200,15 @@ def main(argv):
             sys.exit(1)
     elif 'sempPassword' in router:
         password_source = 'read from inventory file (plaintext)'
+    elif os.environ.get(env_pw_var):
+        cfg['router']['sempPassword'] = os.environ.get(env_pw_var)
+        password_source = 'read from env: ${}'.format(env_pw_var)
     elif os.environ.get('SEMP_PASSWORD'):
         cfg['router']['sempPassword'] = os.environ.get('SEMP_PASSWORD')
         password_source = 'read from env: $SEMP_PASSWORD'
     else:
         log.error ('No password available for {}'.format(app_id))
-        log.info('Set SEMP_PASSWORD env var, or add sempPassword/sempPasswordEnc to inventory file')
+        log.info('Set ${} or $SEMP_PASSWORD env var, or add sempPassword/sempPasswordEnc to inventory file'.format(env_pw_var))
         sys.exit(1)
 
     log.notice (f'Got the router config for {app_id}\n\tURL     : {router["sempUrl"]}\n\tUSER    : {router["sempUser"]}\n\tVPN     : {router["vpn"]}\n\tPASSWORD: {password_source}' )
