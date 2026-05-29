@@ -126,7 +126,14 @@ jobs:
             fi
           done <<< "$PAIRS"
         env:
+          # Per-env password: yaml_to_semp.py prefers SEMP_<ENV>_PASSWORD,
+          # falling back to SEMP_PASSWORD. Undefined secrets resolve to "".
           SEMP_PASSWORD: ${{ secrets.SEMP_PASSWORD }}
+          SEMP_DEV_PASSWORD: ${{ secrets.SEMP_DEV_PASSWORD }}
+          SEMP_INT_PASSWORD: ${{ secrets.SEMP_INT_PASSWORD }}
+          SEMP_SYS_PASSWORD: ${{ secrets.SEMP_SYS_PASSWORD }}
+          SEMP_UAT_PASSWORD: ${{ secrets.SEMP_UAT_PASSWORD }}
+          SEMP_PROD_PASSWORD: ${{ secrets.SEMP_PROD_PASSWORD }}
           PASSWORD_ENC_KEY: ${{ secrets.PASSWORD_ENC_KEY }}
 
       - name: Summary
