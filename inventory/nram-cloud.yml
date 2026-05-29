@@ -22,7 +22,25 @@ inventory:
       sempUser: "nram-dt-test-admin"
       vpn: "nram-dt-test"
 
+    - environment: "int"
+      host: "nramtest.messaging.solace.cloud"
+      sempUrl: "https://nramtest.messaging.solace.cloud:943"
+      sempUser: "nram-dt-test-admin"
+      vpn: "nram-dt-test"
+
     - environment: "sys"
+      host: "nram-gke-poc.messaging.solace.cloud"
+      sempUrl: "https://nram-gke-poc.messaging.solace.cloud:943"
+      sempUser: "nram-prod1-admin"
+      vpn: "nram-prod1"
+
+    - environment: "uat"
+      host: "nram-gke-poc.messaging.solace.cloud"
+      sempUrl: "https://nram-gke-poc.messaging.solace.cloud:943"
+      sempUser: "nram-prod1-admin"
+      vpn: "nram-prod1"
+
+    - environment: "prod"
       host: "nram-gke-poc.messaging.solace.cloud"
       sempUrl: "https://nram-gke-poc.messaging.solace.cloud:943"
       sempUser: "nram-prod1-admin"
