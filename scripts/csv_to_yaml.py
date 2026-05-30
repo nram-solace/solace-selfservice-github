@@ -12,7 +12,7 @@ Example:
 """
 
 # Version information
-VERSION = "3.1.1-0218"
+VERSION = "4.0.0-0531"
 
 import sys
 import os

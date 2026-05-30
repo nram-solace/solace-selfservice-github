@@ -1,0 +1,29 @@
+name: Sync dev → nram/dev-main
+
+# After any PR is merged into an environment branch, merge those changes
+# back into nram/dev-main so developers always branch from an up-to-date base.
+
+on:
+  push:
+    branches: [dev, int, sys, uat, prod]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    name: Merge ${{ github.ref_name }} into nram/dev-main
+
+    steps:
+      - name: Checkout nram/dev-main
+        uses: actions/checkout@v4
+        with:
+          ref: nram/dev-main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge env branch into nram/dev-main
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git merge origin/${{ github.ref_name }} --no-edit \
+            -m "chore: sync ${{ github.ref_name }} → nram/dev-main [skip ci]"
+          git push origin nram/dev-main
