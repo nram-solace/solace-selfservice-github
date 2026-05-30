@@ -3,3 +3,4 @@ nram-dev-test1,1000,exclusive,consume,default,true,10,true,AUTO,test/dev/10/>
 nram-dev-test2,2000,non-exclusive,read-only,default,true,10,true,AUTO,"test/dev/2/>,test/dev/2/alt/*"
 nram-dev-test3,3000,exclusive,consume,default,false,0,false,,test/dev/3/>
 nram-dev-test4,3000,exclusive,consume,default,false,0,false,,test/dev/4/>
+nram-dev-test5,3000,exclusive,consume,default,false,0,false,,test/dev/5/>
