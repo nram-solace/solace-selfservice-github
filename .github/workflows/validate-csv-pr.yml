@@ -35,7 +35,7 @@ jobs:
           BASE_REF="${{ github.base_ref }}"
           echo "PR base branch: $BASE_REF"
           git fetch origin "$BASE_REF" --depth=1 || true
-          FILES=$(git diff --name-only --diff-filter=ACM "origin/${BASE_REF}...HEAD" \
+          FILES=$(git diff --name-only --diff-filter=ACMR "origin/${BASE_REF}...HEAD" \
             | grep -E 'input/csv/.+/(queues|acl-profiles|client-usernames|client-profiles|subscriptions)-[^/]+\.csv$' || true)
           if [ -z "$FILES" ]; then
             echo "No object CSV files changed in this PR"
