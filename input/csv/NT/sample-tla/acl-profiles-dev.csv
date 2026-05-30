@@ -1,0 +1,3 @@
+aclProfileName,clientConnectDefaultAction,clientConnectExceptions,publishTopicExceptions,subscribeTopicExceptions
+csv-test-acl1,disallow,"10.10.0.0/24,10.20.0.0/24","test/topic/pub/1","test/topic/sub/3,test/topic/sub/4"
+csv-test-acl2,,,,

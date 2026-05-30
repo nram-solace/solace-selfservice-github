@@ -41,7 +41,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "Trigger: push — detecting changed client CSV files"
-            FILES=$(git diff --name-only --diff-filter=ACM HEAD~1 | grep -E 'input/csv/.+/(client-usernames|client-profiles)-[^/]+\.csv$' || true)
+            FILES=$(git diff --name-only --diff-filter=ACMR HEAD~1 | grep -E 'input/csv/.+/(client-usernames|client-profiles)-[^/]+\.csv$' || true)
             if [ -z "$FILES" ]; then
               echo "No client CSV files changed in this push"
               echo "SKIP=true" >> $GITHUB_ENV
