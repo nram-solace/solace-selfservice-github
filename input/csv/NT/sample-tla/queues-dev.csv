@@ -1,0 +1,4 @@
+queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
+dev-test1,1000,exclusive,consume,default,true,123,true,AUTO,test/3
+dev-test2,2000,non-exclusive,read-only,default,false,124,true,my/jndi/test2,"test/>,test2/*"
+dev-test3,3000,exclusive,consume,default,true,125,false,,"test3/*"
