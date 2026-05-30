@@ -17,54 +17,76 @@ Github Actions based automation tool for provisioning Solace PubSub+ infrastruct
 
 ## Github Actions Workflow
 
-1. User creates a feature branch (e.g., `feat/team1-queues`)
-2. User creates or updates a CSV file with the list of objects and their properties.
-   For example, to create queues in dev for team1, create/update:
-   `input/csv/team1/queues-dev.csv` (see `input/csv/sample/queues-dev.csv` for format)
-3. User commits and pushes to GitHub
-4. The push triggers the corresponding GitHub Actions workflow automatically
-   - Workflows fire on **feature branches only** (`branches-ignore: [main, master]`)
-   - Path filters ensure only matching CSV files trigger each workflow (e.g., `input/csv/**/queues-*.csv`)
-   - Environment is extracted from the CSV filename (e.g., `queues-dev.csv` → `dev`)
-   - If multiple CSV files change in one push, all are processed in a single workflow run
-5. GitHub Actions workflow will:
-   1. Checkout the code
-   2. Detect changed CSV files via `git diff` (push) or use the provided input (manual dispatch)
-   3. Extract team from the CSV directory path (`input/csv/<team>/...`)
-   4. Extract environment from the CSV filename suffix (`queues-dev.csv` → `dev`)
-   5. Run `solace_self_service.sh` for each file: CSV → YAML → SEMPv2 broker operations
-   6. Post a summary to GitHub step summary with trigger type, files processed, branch, and commit
+Provisioning is **approval-gated**: changes are validated on a pull request and
+applied to a broker only after the PR is merged into a protected **environment
+branch** (`dev`, `int`, `sys`, `uat`, `prod`).
 
-Workflows can also be triggered manually via `workflow_dispatch` with explicit `csv_file` and `environment` inputs.
+1. App team creates a feature branch (e.g., `feat/team1-queues`)
+2. App team creates or updates a CSV file under its team directory, using the
+   target environment as the filename suffix. For example, to create queues in
+   `sys` for team1, create/update:
+   `input/csv/team1/queues-sys.csv` (see `input/csv/sample/queues-dev.csv` for format)
+3. App team commits and pushes to the feature branch (no broker change occurs)
+4. App team opens a **pull request into the target environment branch** (e.g. `sys`)
+   - The `validate-csv-pr` workflow runs CSV → YAML validation only (headers,
+     valid-tags, team path). It uses **no SEMP secrets** and does **not** touch a broker.
+   - Validation warns if a file's env suffix does not match the PR base branch.
+5. Reviewers (EMS / platform team) review the diff and validation results, then
+   approve and merge the PR.
+6. The merge **pushes to the environment branch**, which triggers the matching
+   provisioning workflow automatically:
+   1. Checkout the code
+   2. Detect changed CSV files via `git diff`
+   3. Extract team from the CSV directory path (`input/csv/<team>/...`)
+   4. Extract environment from the CSV filename suffix (`queues-sys.csv` → `sys`)
+   5. **Branch/env guard**: skip any file whose env suffix does not match the branch
+   6. Run `solace_self_service.sh` for each file: CSV → YAML → SEMPv2 broker operations
+   7. Post a summary to GitHub step summary with trigger type, files processed, branch, and commit
+
+Provisioning workflows can also be triggered manually via `workflow_dispatch`
+with explicit `csv_file` and `environment` inputs (operator-driven; the
+branch/env guard is not enforced for manual runs).
 
 ## Workflows and Triggers
 
-All workflows support **dual-mode triggering**: automatic on push (feature branches only) and manual via `workflow_dispatch`.
+| Workflow | Trigger | Path filter |
+| -------- | ------- | ----------- |
+| `validate-csv-pr.yml` | `pull_request` into `dev`/`int`/`sys`/`uat`/`prod` | `input/csv/**` |
+| `process-queues-csv.yml` | `push` to env branches + `workflow_dispatch` | `input/csv/**/queues-*.csv` |
+| `process-acl-profiles-csv.yml` | `push` to env branches + `workflow_dispatch` | `input/csv/**/acl-profiles-*.csv` |
+| `process-client-usernames-csv.yml` | `push` to env branches + `workflow_dispatch` | `input/csv/**/client-usernames-*.csv`, `input/csv/**/client-profiles-*.csv` |
 
-| Workflow | Push trigger path filter | Manual dispatch inputs |
-| -------- | ------------------------ | ---------------------- |
-| `process-queues-csv.yml` | `input/csv/**/queues-*.csv` | `csv_file`, `environment` |
-| `process-acl-profiles-csv.yml` | `input/csv/**/acl-profiles-*.csv` | `csv_file`, `environment` |
-| `process-client-usernames-csv.yml` | `input/csv/**/client-usernames-*.csv`, `input/csv/**/client-profiles-*.csv` | `csv_file` (team dir), `environment` |
+**Validation (`pull_request`):**
 
-**Push (automatic):**
+- Runs on PRs into environment branches (`branches: [dev, int, sys, uat, prod]`)
+- Validates changed CSVs via `csv_to_yaml.py` only — no broker calls, no secrets
+- Fails the PR check on invalid CSVs; warns on env/branch mismatch
 
-- Fires on feature branches only (`branches-ignore: [main, master]`)
-- Detects changed CSV files via `git diff --diff-filter=ACM HEAD~1`
-- Extracts environment from CSV filename suffix (e.g., `queues-dev.csv` → `dev`)
+**Provisioning (push to environment branch):**
+
+- Fires only on push to `dev`, `int`, `sys`, `uat`, `prod` (i.e. on merge)
+- Detects changed CSV files via `git diff`
+- Extracts environment from CSV filename suffix (e.g., `queues-sys.csv` → `sys`)
+- Skips files whose env suffix does not match the branch (branch/env guard)
 - Processes all matching changed files in a single run (multi-file support)
 - Client-usernames workflow deduplicates by `(team_dir, env)` pair before running the dependency chain
 
 **Manual (`workflow_dispatch`):**
 
-- Works on any branch including main/master
+- Works on any branch, including environment branches
 - Requires explicit `csv_file` path and `environment` inputs
-- Useful for re-runs, production deployments, or branches without push-trigger paths
+- Useful for re-runs or operator-driven deployments; branch/env guard not enforced
 
 ### Setup Requirements
 
 - GitHub repository secrets: `SEMP_PASSWORD` (or `PASSWORD_ENC_KEY` if using encrypted passwords in inventory)
+- Optional per-environment secrets: `SEMP_<ENV>_PASSWORD` (e.g. `SEMP_SYS_PASSWORD`,
+  `SEMP_PROD_PASSWORD`). When set, the deploy uses the env-specific password for that
+  environment; otherwise it falls back to `SEMP_PASSWORD`. See
+  [docs/password-management.md](docs/password-management.md).
 - Optional: GitHub repository variables for `SEMP_USER`
+- Protected environment branches (`dev`, `int`, `sys`, `uat`, `prod`) with required PR
+  reviews and (recommended) the `validate-csv-pr` status check required before merge
 
 ## Object dependencies
 
