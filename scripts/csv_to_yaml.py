@@ -80,17 +80,20 @@ class CSVToYAMLConverter:
     def resolve_team_from_path(self, csv_file: str) -> str:
         """Extract team name from CSV path.
 
-        input/csv/team1/queues.csv -> 'team1'
-        input/csv/queues.csv -> error (team is required)
+        Paths must follow input/csv/<org>/<team>/<file>.csv. The <org> level
+        (e.g. NRAM, NT) selects the deploy infra/workflow; <team> (the TLA) scopes
+        the inventory lookup:
 
-        CSV files must be placed under input/csv/<team>/ to scope inventory lookup.
+            input/csv/NRAM/nram-cloud/queues.csv   -> 'nram-cloud'
+            input/csv/NT/tla1/queues.csv           -> 'tla1'
+            input/csv/team1/queues.csv             -> error (org level required)
         """
         # Normalize path separators
         normalized = csv_file.replace('\\', '/')
 
-        # Match pattern: input/csv/<team>/<filename>.csv
+        # Require input/csv/<org>/<team>/<file>.csv; capture <team> (the parent dir).
         import re
-        match = re.search(r'input/csv/([^/]+)/[^/]+\.csv$', normalized)
+        match = re.search(r'input/csv/[^/]+/([^/]+)/[^/]+\.csv$', normalized)
         if match:
             team = match.group(1)
             if self.verbose:
@@ -98,8 +101,8 @@ class CSVToYAMLConverter:
             return team
 
         raise ValueError(
-            f"CSV file must be under input/csv/<team>/ directory: {csv_file}\n"
-            f"Example: input/csv/team1/queues.csv"
+            f"CSV file must be under input/csv/<org>/<team>/: {csv_file}\n"
+            f"Example: input/csv/NRAM/team1/queues.csv"
         )
 
     def load_inventory_mapping(self, team: Optional[str] = None) -> Dict[str, str]:
