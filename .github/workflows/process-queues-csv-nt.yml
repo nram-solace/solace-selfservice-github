@@ -1,48 +1,61 @@
-name: Process ACL Profiles CSV
+name: Process Queues CSV (NT)
 
 on:
   push:
     branches: [dev, int, sys, uat, prod]
     paths:
-      - 'input/csv/**/acl-profiles-*.csv'
+      - 'input/csv/NT/**/queues-*.csv'
   workflow_dispatch:
     inputs:
       csv_file:
-        description: 'Path to CSV file (e.g., input/csv/<org>/<team>/acl-profiles-dev.csv)'
+        description: 'Path to CSV file (e.g., input/csv/<org>/<team>/queues-dev.csv)'
         required: true
-        default: 'input/csv/sample/team1/acl-profiles-dev.csv'
+        default: 'input/csv/sample/team1/queues-dev.csv'
       environment:
         description: 'Target environment (e.g., dev, uat, prod)'
         required: true
         type: string
 
 jobs:
-  process_acl_profiles:
-    runs-on: ubuntu-latest
-    name: Process ACL Profiles
+  process_queues:
+    runs-on: [ self-hosted, enterprise, docker, Linux ]
+    container:
+      image: ghcr.io/northerntrust-internal/ghe/python:3.9  
+    
+    name: Process Queues
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install requests pyyaml cryptography
+        run: pip install requests pyyaml # cryptography
 
       - name: Detect CSV files to process
         id: detect_files
+        shell: bash
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           if [ "${{ github.event_name }}" = "push" ]; then
-            echo "Trigger: push — detecting changed ACL profile CSV files"
-            FILES=$(git diff --name-only --diff-filter=ACM HEAD~1 | grep -E 'input/csv/[^/]+/acl-profiles-[^/]+\.csv$' || true)
+            echo "Trigger: push — detecting changed queue CSV files"
+            BEFORE="${{ github.event.before }}"
+            SHA="${{ github.sha }}"
+            # Try diff against before-SHA first; fall back to HEAD~1 if before is all-zeros (force push / new branch)
+            if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || [ -z "$BEFORE" ]; then
+              echo "No previous commit (new branch or force push) — scanning HEAD for queue CSV files"
+              FILES=$(git diff-tree --no-commit-id -r --name-only --diff-filter=ACM "$SHA" | grep -E 'input/csv/NT/.+/queues-[^/]+\.csv$' || true)
+            else
+              FILES=$(git diff --name-only --diff-filter=ACM "$BEFORE" "$SHA" | grep -E 'input/csv/NT/.+/queues-[^/]+\.csv$' || true)
+            fi
             if [ -z "$FILES" ]; then
-              echo "No ACL profile CSV files changed in this push"
+              echo "No queue CSV files changed in this push"
               echo "SKIP=true" >> $GITHUB_ENV
             else
               echo "Changed files:"
@@ -59,25 +72,23 @@ jobs:
             echo "SKIP=false" >> $GITHUB_ENV
           fi
 
-      - name: Process ACL profile CSV files
+      - name: Process queue CSV files
         if: env.SKIP != 'true'
+        shell: bash
         run: |
           while IFS= read -r CSV_FILE; do
             [ -z "$CSV_FILE" ] && continue
 
-            # Extract team from path
-            if [[ "$CSV_FILE" =~ input/csv/([^/]+)/acl-profiles(-[^/]+)?\.csv ]]; then
-              TEAM="${BASH_REMATCH[1]}"
-            else
-              TEAM="default"
-            fi
+            # Extract team: the directory immediately above the CSV file
+            # (any depth under input/csv/, so input/csv/<org>/<team>/ resolves to <team>).
+            TEAM=$(basename "$(dirname "$CSV_FILE")")
 
             # Extract environment from filename
             if [ -n "$DISPATCH_ENV" ]; then
               ENV="$DISPATCH_ENV"
             else
               BASENAME=$(basename "$CSV_FILE" .csv)
-              ENV="${BASENAME#acl-profiles-}"
+              ENV="${BASENAME#queues-}"
             fi
 
             # Branch/env consistency guard: on push, the file env must match the
@@ -107,8 +118,9 @@ jobs:
 
       - name: Summary
         if: env.SKIP != 'true'
+        shell: bash
         run: |
-          echo "## ACL Profiles Processed Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "## Queues Processed Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Files**:" >> $GITHUB_STEP_SUMMARY
