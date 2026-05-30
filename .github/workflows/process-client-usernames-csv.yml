@@ -41,7 +41,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "Trigger: push — detecting changed client CSV files"
-            FILES=$(git diff --name-only --diff-filter=ACM HEAD~1 | grep -E 'input/csv/[^/]+/(client-usernames|client-profiles)-[^/]+\.csv$' || true)
+            FILES=$(git diff --name-only --diff-filter=ACM HEAD~1 | grep -E 'input/csv/.+/(client-usernames|client-profiles)-[^/]+\.csv$' || true)
             if [ -z "$FILES" ]; then
               echo "No client CSV files changed in this push"
               echo "SKIP=true" >> $GITHUB_ENV
@@ -77,12 +77,9 @@ jobs:
             CSV_DIR="${PAIR%%|*}"
             ENV="${PAIR##*|}"
 
-            # Extract team from path
-            if [[ "$CSV_DIR" =~ input/csv/([^/]+)$ ]]; then
-              TEAM="${BASH_REMATCH[1]}"
-            else
-              TEAM="default"
-            fi
+            # Extract team: the leaf dir of the CSV directory
+            # (input/csv/<org>/<team> -> <team>).
+            TEAM=$(basename "$CSV_DIR")
 
             # Branch/env consistency guard: on push, the file env must match the
             # deploy branch so a wrong-env CSV cannot provision the wrong broker.

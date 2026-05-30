@@ -25,7 +25,7 @@ branch** (`dev`, `int`, `sys`, `uat`, `prod`).
 2. App team creates or updates a CSV file under its team directory, using the
    target environment as the filename suffix. For example, to create queues in
    `sys` for team1, create/update:
-   `input/csv/team1/queues-sys.csv` (see `input/csv/sample/queues-dev.csv` for format)
+   `input/csv/<org>/<team>/queues-sys.csv` (see `input/csv/sample/team1/queues-dev.csv` for format)
 3. App team commits and pushes to the feature branch (no broker change occurs)
 4. App team opens a **pull request into the target environment branch** (e.g. `sys`)
    - The `validate-csv-pr` workflow runs CSV → YAML validation only (headers,

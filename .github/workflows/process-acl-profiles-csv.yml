@@ -40,7 +40,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "Trigger: push — detecting changed ACL profile CSV files"
-            FILES=$(git diff --name-only --diff-filter=ACM HEAD~1 | grep -E 'input/csv/[^/]+/acl-profiles-[^/]+\.csv$' || true)
+            FILES=$(git diff --name-only --diff-filter=ACM HEAD~1 | grep -E 'input/csv/.+/acl-profiles-[^/]+\.csv$' || true)
             if [ -z "$FILES" ]; then
               echo "No ACL profile CSV files changed in this push"
               echo "SKIP=true" >> $GITHUB_ENV
@@ -65,12 +65,9 @@ jobs:
           while IFS= read -r CSV_FILE; do
             [ -z "$CSV_FILE" ] && continue
 
-            # Extract team from path
-            if [[ "$CSV_FILE" =~ input/csv/([^/]+)/acl-profiles(-[^/]+)?\.csv ]]; then
-              TEAM="${BASH_REMATCH[1]}"
-            else
-              TEAM="default"
-            fi
+            # Extract team: the directory immediately above the CSV file
+            # (input/csv/<org>/<team>/ -> <team>).
+            TEAM=$(basename "$(dirname "$CSV_FILE")")
 
             # Extract environment from filename
             if [ -n "$DISPATCH_ENV" ]; then
