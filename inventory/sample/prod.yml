@@ -1,0 +1,15 @@
+# Solace router and access info for the sample client - prod environment
+# One inventory file per environment: inventory/<client>/<env>.yml
+# Each entry is keyed on "app" (application name). The env comes from the file name.
+
+---
+inventory:
+    hosts:
+    # Example that relies on SEMP_PROD_PASSWORD or SEMP_PASSWORD env var at runtime
+    # (recommended for CI/CD pipelines)
+    - app: "team1"
+      host: "localhost"
+      sempUrl: "http://localhost:8080"
+      sempUser: "admin"
+      #sempPassword: "admin"
+      vpn: "default"

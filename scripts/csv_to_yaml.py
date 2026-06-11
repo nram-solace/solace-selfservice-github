@@ -3,16 +3,23 @@
 CSV to YAML Converter for Solace Configuration
 Reads CSV files and generates YAML output for yaml_to_semp.py
 
+CSV files must follow the layout:
+    input/csv/<client>/<env>/<object>-<app>.csv
+
+The client and env are taken from the directory path; the app name is taken
+from the filename suffix. The matching inventory file is inventory/<client>/<env>.yml
+and the entry with app: <app> selects the broker connection details.
+
 Usage:
-    python csv_to_yaml.py --csv-file <path/to/csv> --env <environment>
+    python csv_to_yaml.py --csv-file <path/to/csv> [--env <environment>]
 
 Example:
-    python csv_to_yaml.py --csv-file input/csv/queues.csv --env dev
-    python csv_to_yaml.py --csv-file input/csv/team1/queues.csv --env uat -v
+    python csv_to_yaml.py --csv-file input/csv/NRAM/dev/queues-xyz.csv
+    python csv_to_yaml.py --csv-file input/csv/sample/uat/queues-team1.csv --env uat -v
 """
 
 # Version information
-VERSION = "4.0.0-0531"
+VERSION = "5.0.0-0611"
 
 import sys
 import os
@@ -53,6 +60,15 @@ class CSVToYAMLConverter:
         'client-profiles': 'config/defaults/client-profile.yaml', 
         'acl-profiles': 'config/defaults/acl-profile.yaml'
     }
+
+    # Object type prefixes to match against (order matters - check longer prefixes first)
+    type_prefixes = [
+        (['client-username', 'client-usernames', 'client_user', 'client_users'], 'client-usernames'),
+        (['client-profile', 'client-profiles', 'client_profile', 'client_profiles'], 'client-profiles'),
+        (['acl-profile', 'acl-profiles', 'acl_profile', 'acl_profiles'], 'acl-profiles'),
+        (['subscription', 'subscriptions'], 'subscriptions'),
+        (['queue', 'queues'], 'queues'),
+    ]
     
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
@@ -77,120 +93,88 @@ class CSVToYAMLConverter:
                 self.log(f"Warning: Could not read system config {system_config_path}: {e}")
             return {}
     
-    def resolve_team_from_path(self, csv_file: str) -> str:
-        """Extract team name from CSV path.
+    def resolve_path_components(self, csv_file: str) -> tuple:
+        """Extract (client, env, app) from CSV path.
 
-        Paths must follow input/csv/<org>/<team>/<file>.csv. The <org> level
-        (e.g. NRAM, NT) selects the deploy infra/workflow; <team> (the TLA) scopes
-        the inventory lookup:
+        Paths must follow input/csv/<client>/<env>/<object>-<app>.csv:
 
-            input/csv/NRAM/nram-cloud/queues.csv   -> 'nram-cloud'
-            input/csv/NT/tla1/queues.csv           -> 'tla1'
-            input/csv/team1/queues.csv             -> error (org level required)
+            input/csv/NRAM/dev/queues-xyz.csv      -> ('NRAM', 'dev', 'xyz')
+            input/csv/NT/uat/client-usernames-tla1.csv -> ('NT', 'uat', 'tla1')
+            input/csv/team1/queues.csv             -> error
         """
         # Normalize path separators
         normalized = csv_file.replace('\\', '/')
 
-        # Require input/csv/<org>/<team>/<file>.csv; capture <team> (the parent dir).
         import re
-        match = re.search(r'input/csv/[^/]+/([^/]+)/[^/]+\.csv$', normalized)
-        if match:
-            team = match.group(1)
-            if self.verbose:
-                self.log(f"Resolved team '{team}' from path: {csv_file}")
-            return team
+        match = re.search(r'input/csv/([^/]+)/([^/]+)/([^/]+)\.csv$', normalized)
+        if not match:
+            raise ValueError(
+                f"CSV file must be under input/csv/<client>/<env>/: {csv_file}\n"
+                f"Example: input/csv/NRAM/dev/queues-xyz.csv"
+            )
+
+        client, env, filename = match.group(1), match.group(2), match.group(3)
+        app = self.resolve_app_from_filename(filename)
+
+        if self.verbose:
+            self.log(f"Resolved client '{client}', env '{env}', app '{app}' from path: {csv_file}")
+        return client, env, app
+
+    def resolve_app_from_filename(self, name_without_ext: str) -> str:
+        """Extract app name from filename: <object>-<app> -> <app>.
+
+        e.g. 'queues-xyz' -> 'xyz', 'client-usernames-tla1' -> 'tla1'
+        """
+        object_type = self.get_object_type_from_filename(name_without_ext + '.csv')
+
+        # Find the matched prefix and strip it (plus the separator)
+        for prefixes, otype in self.type_prefixes:
+            if otype != object_type:
+                continue
+            for prefix in prefixes:
+                if name_without_ext.startswith(prefix + '-') or name_without_ext.startswith(prefix + '_'):
+                    app = name_without_ext[len(prefix) + 1:]
+                    if app:
+                        return app
 
         raise ValueError(
-            f"CSV file must be under input/csv/<org>/<team>/: {csv_file}\n"
-            f"Example: input/csv/NRAM/team1/queues.csv"
+            f"CSV filename must be <object>-<app>.csv (e.g. queues-xyz.csv): {name_without_ext}.csv"
         )
 
-    def load_inventory_mapping(self, team: Optional[str] = None) -> Dict[str, str]:
-        """Load inventory files and create environment->vpn mapping.
+    def load_inventory_mapping(self, client: str, env: str) -> Dict[str, str]:
+        """Load inventory/<client>/<env>.yml and create app->vpn mapping.
 
-        When team is specified, looks for inventory/<team>.yaml first.
-        Falls back to scanning all inventory files for backward compatibility.
+        Fails fast if the inventory file is missing.
         """
-        name_to_vpn = {}
         inv_dir = 'inventory'
+        inv_file = os.path.join(inv_dir, client, f'{env}.yml')
+        if not os.path.isfile(inv_file):
+            inv_file = os.path.join(inv_dir, client, f'{env}.yaml')
+        if not os.path.isfile(inv_file):
+            raise FileNotFoundError(
+                f"Inventory file not found: {os.path.join(inv_dir, client, env)}.yml (or .yaml)\n"
+                f"Expected one inventory file per environment: inventory/<client>/<env>.yml"
+            )
 
-        # If team specified, try team-specific inventory file first
-        if team:
-            team_inv_file = os.path.join(inv_dir, f'{team}.yaml')
-            if not os.path.isfile(team_inv_file):
-                team_inv_file = os.path.join(inv_dir, f'{team}.yml')
-            if os.path.isfile(team_inv_file):
-                name_to_vpn = self._load_single_inventory_file(team_inv_file)
-                if name_to_vpn:
-                    if self.verbose:
-                        self.log(f"Loaded team inventory from {team_inv_file}: {name_to_vpn}")
-                    return name_to_vpn
-                elif self.verbose:
-                    self.log(f"No hosts found in team inventory file {team_inv_file}, falling back to full scan")
-            elif self.verbose:
-                self.log(f"Team inventory file {os.path.join(inv_dir, f'{team}.yaml')} not found, falling back to full scan")
-
-        # Fallback: scan all inventory files recursively
-        if os.path.isdir(inv_dir):
-            name_to_vpn = self._scan_inventory_dir(inv_dir, recursive=True)
-            if self.verbose:
-                self.log(f"Loaded inventory mapping from {inv_dir}: {name_to_vpn}")
-
-        if not name_to_vpn:
-            # Legacy fallback: try hardcoded paths
-            for inventory_file in ['inventory/sample-inventory-local.yaml', 'sample-inventory-local.yaml']:
-                if os.path.exists(inventory_file):
-                    name_to_vpn = self._load_single_inventory_file(inventory_file)
-                    if name_to_vpn:
-                        break
-
-        if not name_to_vpn and self.verbose:
-            self.log("Warning: No inventory file found, using CSV values directly")
-
-        return name_to_vpn
-
-    def _scan_inventory_dir(self, inv_dir: str, recursive: bool = False) -> Dict[str, str]:
-        """Scan an inventory directory for YAML files and build environment->vpn mapping."""
-        name_to_vpn = {}
-
-        if recursive:
-            for root, dirs, files in os.walk(inv_dir):
-                for file in files:
-                    if file.endswith('.yaml') or file.endswith('.yml'):
-                        inv_file = os.path.join(root, file)
-                        mapping = self._load_single_inventory_file(inv_file)
-                        name_to_vpn.update(mapping)
-        else:
-            for file in os.listdir(inv_dir):
-                if file.endswith('.yaml') or file.endswith('.yml'):
-                    inv_file = os.path.join(inv_dir, file)
-                    mapping = self._load_single_inventory_file(inv_file)
-                    name_to_vpn.update(mapping)
-
-        return name_to_vpn
+        app_to_vpn = self._load_single_inventory_file(inv_file)
+        if self.verbose:
+            self.log(f"Loaded inventory from {inv_file}: {app_to_vpn}")
+        return app_to_vpn
 
     def _load_single_inventory_file(self, inventory_file: str) -> Dict[str, str]:
-        """Load a single inventory file and return environment->vpn mapping."""
-        try:
-            inventory_config = self.yaml_handler.read_config_file(inventory_file)
-            inventory = inventory_config.get('inventory', {})
-            hosts = inventory.get('hosts', [])
+        """Load a single inventory file and return app->vpn mapping."""
+        inventory_config = self.yaml_handler.read_config_file(inventory_file)
+        inventory = inventory_config.get('inventory', {})
+        hosts = inventory.get('hosts', [])
 
-            name_to_vpn = {}
-            for host in hosts:
-                name = host.get('environment')
-                vpn = host.get('vpn')
-                if name and vpn:
-                    name_to_vpn[name] = vpn
+        app_to_vpn = {}
+        for host in hosts:
+            app = host.get('app')
+            vpn = host.get('vpn')
+            if app and vpn:
+                app_to_vpn[app] = vpn
 
-            if self.verbose and name_to_vpn:
-                self.log(f"Loaded inventory from {inventory_file}: {name_to_vpn}")
-            return name_to_vpn
-
-        except Exception as e:
-            if self.verbose:
-                self.log(f"Warning: Could not read inventory file {inventory_file}: {e}")
-            return {}
+        return app_to_vpn
     
     def log(self, message: str):
         """Log message with prefix"""
@@ -199,22 +183,13 @@ class CSVToYAMLConverter:
     def get_object_type_from_filename(self, csv_file: str) -> str:
         """Extract object type from CSV filename.
 
-        Supports env-suffixed filenames like queues-dev.csv, client-usernames-uat.csv.
+        Supports app-suffixed filenames like queues-xyz.csv, client-usernames-tla1.csv.
         The suffix after the object type is ignored.
         """
         filename = os.path.basename(csv_file)
         name_without_ext = os.path.splitext(filename)[0]
 
-        # Object type prefixes to match against (order matters - check longer prefixes first)
-        type_prefixes = [
-            (['client-username', 'client-usernames', 'client_user', 'client_users'], 'client-usernames'),
-            (['client-profile', 'client-profiles', 'client_profile', 'client_profiles'], 'client-profiles'),
-            (['acl-profile', 'acl-profiles', 'acl_profile', 'acl_profiles'], 'acl-profiles'),
-            (['subscription', 'subscriptions'], 'subscriptions'),
-            (['queue', 'queues'], 'queues'),
-        ]
-
-        for prefixes, object_type in type_prefixes:
+        for prefixes, object_type in self.type_prefixes:
             for prefix in prefixes:
                 if name_without_ext == prefix or name_without_ext.startswith(prefix + '-') or name_without_ext.startswith(prefix + '_'):
                     return object_type
@@ -382,13 +357,14 @@ class CSVToYAMLConverter:
         
         return merged_objects
     
-    def resolve_env_and_prepare_objects(self, objects: List[Dict[str, Any]], env: str, team: Optional[str] = None) -> tuple[str, List[Dict[str, Any]]]:
-        """Resolve environment to msgVpnName via inventory and prepare objects.
+    def resolve_app_and_prepare_objects(self, objects: List[Dict[str, Any]], client: str, env: str, app: str) -> tuple:
+        """Resolve app to msgVpnName via inventory/<client>/<env>.yml and prepare objects.
 
         Args:
             objects: List of parsed CSV row dictionaries
-            env: Target environment (inventory host environment, e.g., dev, uat, prod)
-            team: Team name resolved from CSV path (scopes inventory lookup)
+            client: Client/org name from CSV path (e.g. NRAM, NT)
+            env: Target environment from CSV path (e.g. dev, uat, prod)
+            app: Application name from CSV filename suffix
 
         Returns:
             Tuple of (actual_msg_vpn_name, prepared_objects)
@@ -396,18 +372,17 @@ class CSVToYAMLConverter:
         if not objects:
             raise ValueError("No objects to process")
 
-        # Load inventory mapping (team-aware)
-        inventory_mapping = self.load_inventory_mapping(team=team)
+        inventory_mapping = self.load_inventory_mapping(client=client, env=env)
 
-        # Resolve actual msgVpnName from inventory
-        if env in inventory_mapping:
-            actual_msg_vpn_name = inventory_mapping[env]
-            if self.verbose:
-                self.log(f"Resolved env '{env}' -> msgVpnName '{actual_msg_vpn_name}' from inventory")
-        else:
-            actual_msg_vpn_name = env
-            if self.verbose:
-                self.log(f"Env '{env}' not found in inventory, using as msgVpnName directly")
+        if app not in inventory_mapping:
+            raise ValueError(
+                f"App '{app}' not found in inventory/{client}/{env}.yml\n"
+                f"Known apps: {sorted(inventory_mapping.keys())}"
+            )
+
+        actual_msg_vpn_name = inventory_mapping[app]
+        if self.verbose:
+            self.log(f"Resolved app '{app}' (env '{env}') -> msgVpnName '{actual_msg_vpn_name}' from inventory")
 
         # Prepare objects: strip env/inventoryKey if present, set msgVpnName
         prepared_objects = []
@@ -418,29 +393,35 @@ class CSVToYAMLConverter:
             obj_copy['msgVpnName'] = actual_msg_vpn_name
             prepared_objects.append(obj_copy)
 
-        self.log(f"Processing {len(prepared_objects)} records for env '{env}' -> msgVpnName '{actual_msg_vpn_name}'")
+        self.log(f"Processing {len(prepared_objects)} records for app '{app}' env '{env}' -> msgVpnName '{actual_msg_vpn_name}'")
         return actual_msg_vpn_name, prepared_objects
     
-    def generate_yaml_output(self, verbose: bool, csv_file: str, env: str) -> Dict[str, Any]:
+    def generate_yaml_output(self, verbose: bool, csv_file: str, env: Optional[str] = None) -> Dict[str, Any]:
         """Generate YAML output structure.
 
         Args:
             verbose: Enable verbose output
             csv_file: Path to CSV input file
-            env: Target environment (inventory host environment)
+            env: Optional target environment; must match the env from the CSV path
         """
 
         # Determine object type from CSV filename
         object_type = self.get_object_type_from_filename(csv_file)
 
-        # Resolve team from CSV path (required)
-        team = self.resolve_team_from_path(csv_file)
+        # Resolve client/env/app from CSV path (required)
+        client, path_env, app = self.resolve_path_components(csv_file)
+
+        # If --env was given, it must agree with the path
+        if env and env != path_env:
+            raise ValueError(
+                f"--env '{env}' does not match env '{path_env}' from CSV path: {csv_file}"
+            )
+        env = path_env
 
         if self.verbose:
             self.log(f"Processing CSV file: {csv_file}")
             self.log(f"Detected object type: {object_type}")
-            self.log(f"Target environment: {env}")
-            self.log(f"Team: {team}")
+            self.log(f"Client: {client}, Environment: {env}, App: {app}")
 
         # Read CSV data with header validation
         objects = self.read_csv_file(csv_file, object_type)
@@ -448,8 +429,8 @@ class CSVToYAMLConverter:
         if not objects:
             raise ValueError(f"No data found in CSV file: {csv_file}")
 
-        # Resolve env to msgVpnName and prepare objects
-        msg_vpn_name, valid_objects = self.resolve_env_and_prepare_objects(objects, env=env, team=team)
+        # Resolve app to msgVpnName and prepare objects
+        msg_vpn_name, valid_objects = self.resolve_app_and_prepare_objects(objects, client=client, env=env, app=app)
 
         # Read defaults
         defaults = self.read_defaults(object_type)
@@ -458,15 +439,15 @@ class CSVToYAMLConverter:
         if defaults:
             valid_objects = self.merge_with_defaults(valid_objects, defaults)
 
-        # Build the output structure - keep minimal params for yaml_to_semp.py compatibility
+        # Build the output structure for yaml_to_semp.py:
+        # client + env locate the inventory file, app selects the entry
         params = {
-            'vpnName': env,  # Use env key for yaml_to_semp.py inventory lookup
+            'client': client,
+            'env': env,
+            'app': app,
             'verbose': verbose,
             'create': [object_type]
         }
-
-        # Add team to params so yaml_to_semp.py can scope inventory loading
-        params['team'] = team
 
         output = {
             'params': params,
@@ -505,9 +486,10 @@ def main():
     parser = argparse.ArgumentParser(description='Convert CSV files to YAML configuration')
     parser.add_argument('--verbose', '-v', action='count', default=0,
                        help='Verbose output. Use -vvv for more verbose output')
-    parser.add_argument('--csv-file', required=True, help='Path to CSV file')
-    parser.add_argument('--env', '-e', required=True,
-                       help='Target environment (inventory host environment, e.g., dev, uat, prod)')
+    parser.add_argument('--csv-file', required=True,
+                       help='Path to CSV file (input/csv/<client>/<env>/<object>-<app>.csv)')
+    parser.add_argument('--env', '-e', required=False, default=None,
+                       help='Target environment (optional; must match the <env> directory in the CSV path)')
     parser.add_argument('--output-file', help='Output YAML file path (optional)')
     
     args = parser.parse_args()

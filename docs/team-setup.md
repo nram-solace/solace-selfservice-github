@@ -1,74 +1,89 @@
-# Team Setup
+# App Setup
 
-Each team gets their own isolated directory for CSV inputs and inventory. This prevents merge conflicts, provides clear ownership, and enables team-scoped workflow processing.
+CSV inputs are organized per client and environment, with one file per object type per application (app). This prevents merge conflicts, provides clear ownership, and lets a single per-environment inventory file serve hundreds of apps.
 
 ## Directory Layout
 
 ```text
 input/csv/
-├── team1/
-│   ├── queues-dev.csv
-│   ├── queues-uat.csv
-│   ├── client-usernames-dev.csv
-│   ├── acl-profiles-dev.csv
-│   └── client-profiles-dev.csv
-├── team2/
-│   ├── queues-dev.csv
-│   └── queues-uat.csv
+├── NRAM/                       ← client
+│   ├── dev/                    ← environment
+│   │   ├── queues-xyz.csv      ← <object>-<app>.csv
+│   │   ├── queues-abc.csv
+│   │   ├── client-usernames-xyz.csv
+│   │   ├── acl-profiles-xyz.csv
+│   │   └── client-profiles-xyz.csv
+│   ├── uat/
+│   │   └── queues-xyz.csv
+│   └── prod/
+│       └── queues-xyz.csv
 └── sample/
-    ├── queues-dev.csv
-    ├── queues-uat.csv
-    └── queues-prod.csv
+    ├── dev/
+    │   └── queues-team1.csv
+    ├── uat/
+    │   └── queues-team1.csv
+    └── prod/
+        └── queues-team1.csv
 
 inventory/
-├── team1.yaml                  ← All environments for team1
-├── team2.yaml
-├── team3.yaml
-└── sample.yml                  ← Sample inventory with password examples
+├── NRAM/
+│   ├── dev.yml                 ← All NRAM apps in dev (keyed by app)
+│   ├── uat.yml
+│   └── prod.yml
+└── sample/
+    ├── dev.yml                 ← Sample inventory with password examples
+    ├── uat.yml
+    └── prod.yml
 ```
 
 ## How It Works
 
-1. **Team auto-resolved from CSV path**: `input/csv/<team>/queues-dev.csv` extracts `team` from the directory name
-2. **`--env` CLI parameter selects environment**: Specifies which environment (dev, uat, prod) to target
-3. **Team-scoped inventory lookup**: Only the team's inventory file (`inventory/<team>.yaml`) is consulted — see [Inventory Setup](inventory-setup.md)
-4. **Broker connection resolved**: The `--env` value is matched against `hosts[].environment` in the team's inventory to get VPN, SEMP URL, and credentials
+1. **Client and environment auto-resolved from CSV path**: `input/csv/<client>/<env>/...`
+2. **App auto-resolved from CSV filename**: `queues-xyz.csv` → app `xyz`
+3. **Inventory lookup**: `inventory/<client>/<env>.yml` is read and the entry matching `app` is used — see [Inventory Setup](inventory-setup.md)
+4. **Broker connection resolved**: The app's entry provides VPN, SEMP URL, and credentials
 
-## Team CSV Format
+The `--env` CLI parameter is optional; if given, it must match the `<env>` directory in the CSV path.
 
-Team CSVs contain only object definitions — no environment column. The target environment is specified via the `--env` CLI parameter:
+> Note: App names must not start with an object-type keyword (`queues`, `client-usernames`, `client-profiles`, `acl-profiles`, `subscriptions`).
+
+## App CSV Format
+
+CSVs contain only object definitions — no environment or app column. Both are derived from the file path:
 
 ```csv
 queueName,maxMsgSpoolUsage,accessType,permission,owner,redeliveryEnabled,maxRedeliveryCount,deliveryCountEnabled,jndiQueueName,subscriptions
-team1-dev-queue1,1000,exclusive,consume,default,true,5,true,AUTO,team1/dev/orders/>
-team1-dev-queue2,2000,non-exclusive,consume,default,false,10,true,,"team1/dev/events/*,team1/dev/notifications/*"
+xyz-dev-queue1,1000,exclusive,consume,default,true,5,true,AUTO,xyz/dev/orders/>
+xyz-dev-queue2,2000,non-exclusive,consume,default,false,10,true,,"xyz/dev/events/*,xyz/dev/notifications/*"
 ```
 
-## Team Onboarding
+## App Onboarding
 
-To add a new team to the self-service system:
+To add a new app to the self-service system:
 
-1. **Create team input directory**:
+1. **Add an inventory entry** for the app in each target environment file
+   `inventory/<client>/<env>.yml`:
+
+   ```yaml
+   - app: "newapp"
+     host: "dev-broker.example.com"
+     sempUrl: "https://dev-broker.example.com:8080"
+     sempUser: "admin"
+     vpn: "NEWAPP-DEV-VPN"
+   ```
+
+2. **Create CSV files** under the client/env directory:
 
    ```bash
-   mkdir -p input/csv/<team-name>
+   mkdir -p input/csv/<client>/dev
+   # input/csv/<client>/dev/queues-newapp.csv
    ```
 
-2. **Create team inventory file** `inventory/<team-name>.yaml` with environment entries.
-   See [Inventory Setup](inventory-setup.md) for format and required fields.
-
-3. **Create CSV files** per environment in the team directory:
-
-   ```csv
-   queueName,maxMsgSpoolUsage,accessType,permission,owner
-   example-queue,1000,exclusive,consume,default
-   ```
-
-4. **Test the pipeline**:
+3. **Test the pipeline**:
 
    ```bash
    export SEMP_PASSWORD=your_broker_password
-   bash scripts/solace_self_service.sh --csv-file input/csv/<team-name>/queues-dev.csv --env dev --verbose
+   bash scripts/solace_self_service.sh --csv-file input/csv/<client>/dev/queues-newapp.csv --verbose
    ```
 
 ## Configuration Structure
@@ -84,19 +99,18 @@ config/
     └── acl-profile.yaml
 
 inventory/
-├── <team>.yaml          ← Per-team inventory (multi-env hosts)
-└── sample.yml           ← Sample inventory with password examples
+└── <client>/
+    └── <env>.yml        ← Per-environment inventory (keyed by app)
 
 input/
 ├── csv/
-│   └── <team>/          ← Per-team CSV inputs (one file per env)
-│       ├── queues-dev.csv
-│       ├── queues-uat.csv
-│       ├── client-usernames-dev.csv
-│       ├── acl-profiles-dev.csv
-│       └── client-profiles-dev.csv
-├── yaml/                ← Generated YAML (build artifact, gitignored)
-└── sample/              ← Sample YAML input files for reference
+│   └── <client>/
+│       └── <env>/       ← Per-env CSV inputs (one file per object type per app)
+│           ├── queues-<app>.csv
+│           ├── client-usernames-<app>.csv
+│           ├── acl-profiles-<app>.csv
+│           └── client-profiles-<app>.csv
+└── yaml/                ← Generated YAML (build artifact, gitignored)
 
 scripts/
 ├── yaml_to_semp.py      ← Main automation script (YAML → SEMPv2)
