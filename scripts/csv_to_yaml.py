@@ -214,9 +214,8 @@ class CSVToYAMLConverter:
     
     def parse_csv_value(self, value: str, field_name: str = None) -> Any:
         """Parse CSV value, handling lists and data types"""
-        # Add debugging
-        if self.verbose:
-            self.log(f"Parsing value: '{value}' (type: {type(value)})")
+        # if self.verbose:
+        #     self.log(f"Parsing value: '{value}' (type: {type(value)})")
         
         # Handle case where value is already a list (from CSV reader)
         if isinstance(value, list):
@@ -321,9 +320,8 @@ class CSVToYAMLConverter:
                 parsed_row = {}
                 for key, value in row.items():
                     try:
-                        # Debug: Check what the CSV reader is actually returning
-                        if self.verbose:
-                            self.log(f"Raw CSV value for key '{key}': '{value}' (type: {type(value)}, repr: {repr(value)})")
+                        # if self.verbose:
+                        #     self.log(f"Raw CSV value for key '{key}': '{value}' (type: {type(value)}, repr: {repr(value)})")
 
                         parsed_value = self.parse_csv_value(value, key)
                         # Special handling for jndiQueueName - preserve empty string to indicate "no JNDI"
