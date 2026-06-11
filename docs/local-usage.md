@@ -31,8 +31,10 @@ pip install -r requirements.txt
 The wrapper script runs the full CSV → YAML → SEMP pipeline in one command:
 
 ```bash
-bash scripts/solace_self_service.sh --csv-file input/csv/team1/queues-dev.csv --env dev --verbose
+bash scripts/solace_self_service.sh --csv-file input/csv/sample/dev/queues-team1.csv --verbose
 ```
+
+The environment is derived from the CSV path (`input/csv/<client>/<env>/<object>-<app>.csv`); `--env` is optional and only validated against the path.
 
 ## Two-Step Process
 
@@ -40,10 +42,10 @@ Run CSV conversion and SEMP operations separately:
 
 ```bash
 # Step 1: Convert CSV to YAML
-python3 scripts/csv_to_yaml.py --csv-file input/csv/team1/queues-dev.csv --env dev
+python3 scripts/csv_to_yaml.py --csv-file input/csv/sample/dev/queues-team1.csv
 
 # Step 2: Apply YAML to broker via SEMP
-python3 scripts/yaml_to_semp.py --input input/yaml/team1/queues-dev.yaml -v
+python3 scripts/yaml_to_semp.py --input input/yaml/sample/dev/queues-team1.yaml -v
 ```
 
 ## YAML-Only (Skip CSV Conversion)
@@ -77,7 +79,7 @@ Use `-v` flags for increasing verbosity levels:
 - `-vvv` — TRACE level
 
 ```bash
-bash scripts/solace_self_service.sh --csv-file input/csv/team1/queues-dev.csv --env dev -vvv
+bash scripts/solace_self_service.sh --csv-file input/csv/sample/dev/queues-team1.csv -vvv
 ```
 
 Logs are written to the `logs/` directory with timestamps.

@@ -1,0 +1,15 @@
+# Solace router and access info for the sample client - uat environment
+# One inventory file per environment: inventory/<client>/<env>.yml
+# Each entry is keyed on "app" (application name). The env comes from the file name.
+
+---
+inventory:
+    hosts:
+    # Example with encrypted password (recommended for shared/production use)
+    # The value below is "admin" encrypted with default key
+    - app: "team1"
+      host: "localhost"
+      sempUrl: "http://localhost:8080"
+      sempUser: "admin"
+      sempPasswordEnc: "Z0FBQUFBQnBsUEZOeU9CVFdaTGRNZmhvdG9Cam1TWGIzRFNwVEdVMkxQQ0hxLXpZNTZnZmMwcmZYbWFlUFp3cGZVOS14TF9BSmxhdW42NnEyUW9ia2gtVkhiNmpfbTdpWkE9PQ=="
+      vpn: "default"
