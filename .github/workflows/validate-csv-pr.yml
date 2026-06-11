@@ -67,12 +67,8 @@ jobs:
             [ -z "$CSV_FILE" ] && continue
 
             BASENAME=$(basename "$CSV_FILE" .csv)
-            # Strip the known object-type prefix to obtain the env suffix
-            ENV="${BASENAME#queues-}"
-            ENV="${ENV#acl-profiles-}"
-            ENV="${ENV#client-usernames-}"
-            ENV="${ENV#client-profiles-}"
-            ENV="${ENV#subscriptions-}"
+            # Path layout: input/csv/<client>/<env>/<object>-<app>.csv
+            ENV=$(basename "$(dirname "$CSV_FILE")")
 
             echo "========================================="
             echo "Validating: $CSV_FILE (env: $ENV)"
@@ -81,7 +77,6 @@ jobs:
             STATUS="ok"
             if ! python3 scripts/csv_to_yaml.py \
                   --csv-file "$CSV_FILE" \
-                  --env "$ENV" \
                   --output-file "/tmp/validate-yaml/${BASENAME}.yaml" -v; then
               STATUS="FAILED validation"
               FAILED=1

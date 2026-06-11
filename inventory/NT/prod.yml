@@ -1,0 +1,11 @@
+# Solace router and access info for NT - prod environment
+# One inventory file per environment: inventory/<client>/<env>.yml
+
+---
+inventory:
+    hosts:
+    - app: "sample-tla"
+      host: "localhost"
+      sempUrl: "http://localhost:8080"
+      sempUser: "admin"
+      vpn: "default"

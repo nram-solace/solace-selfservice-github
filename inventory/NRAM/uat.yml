@@ -1,0 +1,11 @@
+# Solace router and access info for NRAM - uat environment
+# One inventory file per environment: inventory/<client>/<env>.yml
+
+---
+inventory:
+    hosts:
+    - app: "nram-cloud"
+      host: "nram-gke-poc.messaging.solace.cloud"
+      sempUrl: "https://nram-gke-poc.messaging.solace.cloud:943"
+      sempUser: "nram-prod1-admin"
+      vpn: "nram-prod1"

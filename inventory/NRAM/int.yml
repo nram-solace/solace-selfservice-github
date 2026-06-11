@@ -1,0 +1,11 @@
+# Solace router and access info for NRAM - int environment
+# One inventory file per environment: inventory/<client>/<env>.yml
+
+---
+inventory:
+    hosts:
+    - app: "nram-cloud"
+      host: "nramtest.messaging.solace.cloud"
+      sempUrl: "https://nramtest.messaging.solace.cloud:943"
+      sempUser: "nram-dt-test-admin"
+      vpn: "nram-dt-test"
