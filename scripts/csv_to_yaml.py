@@ -214,9 +214,8 @@ class CSVToYAMLConverter:
     
     def parse_csv_value(self, value: str, field_name: str = None) -> Any:
         """Parse CSV value, handling lists and data types"""
-        # Add debugging
-        if self.verbose:
-            self.log(f"Parsing value: '{value}' (type: {type(value)})")
+        # if self.verbose:
+        #     self.log(f"Parsing value: '{value}' (type: {type(value)})")
         
         # Handle case where value is already a list (from CSV reader)
         if isinstance(value, list):
@@ -314,16 +313,15 @@ class CSVToYAMLConverter:
                 self.validate_csv_headers(reader.fieldnames, object_type)
             
             for row_num, row in enumerate(reader, start=2):  # Start at 2 since row 1 is headers
-                if self.verbose:
-                    self.log(f"Processing row {row_num}: {row}")
+                # if self.verbose:
+                #     self.log(f"Processing row {row_num}: {row}")
                 
                 # Parse each value in the row
                 parsed_row = {}
                 for key, value in row.items():
                     try:
-                        # Debug: Check what the CSV reader is actually returning
-                        if self.verbose:
-                            self.log(f"Raw CSV value for key '{key}': '{value}' (type: {type(value)}, repr: {repr(value)})")
+                        # if self.verbose:
+                        #     self.log(f"Raw CSV value for key '{key}': '{value}' (type: {type(value)}, repr: {repr(value)})")
 
                         parsed_value = self.parse_csv_value(value, key)
                         # Special handling for jndiQueueName - preserve empty string to indicate "no JNDI"
@@ -338,8 +336,8 @@ class CSVToYAMLConverter:
                 if parsed_row:  # Only add non-empty rows
                     objects.append(parsed_row)
                     
-                    if self.verbose:
-                        self.log(f"Processed row {row_num}: {parsed_row}")
+                    # if self.verbose:
+                    #     self.log(f"Processed row {row_num}: {parsed_row}")
         
         return objects
     
