@@ -8,12 +8,12 @@ on:
       - 'input/csv/**/client-profiles-*.csv'
   workflow_dispatch:
     inputs:
-      csv_file:
-        description: 'Path to team CSV directory (e.g., input/csv/<org>/<team>)'
+      csv_dir:
+        description: 'Path to env CSV directory (e.g., input/csv/<client>/<env>)'
         required: true
-        default: 'input/csv/sample/team1'
-      environment:
-        description: 'Target environment (e.g., dev, uat, prod)'
+        default: 'input/csv/sample/dev'
+      app:
+        description: 'Application name (e.g., team1)'
         required: true
         type: string
 
@@ -48,15 +48,16 @@ jobs:
             else
               echo "Changed files:"
               echo "$FILES"
-              # Deduplicate by (dir, env) pairs
+              # Deduplicate by (dir, app) pairs
+              # Path layout: input/csv/<client>/<env>/<object>-<app>.csv
               PAIRS=$(echo "$FILES" | while IFS= read -r f; do
                 DIR=$(dirname "$f")
                 BASENAME=$(basename "$f" .csv)
-                ENV="${BASENAME#client-usernames-}"
-                ENV="${ENV#client-profiles-}"
-                echo "${DIR}|${ENV}"
+                APP="${BASENAME#client-usernames-}"
+                APP="${APP#client-profiles-}"
+                echo "${DIR}|${APP}"
               done | sort -u)
-              echo "Unique (dir, env) pairs:"
+              echo "Unique (dir, app) pairs:"
               echo "$PAIRS"
               echo "PAIRS<<EOF" >> $GITHUB_ENV
               echo "$PAIRS" >> $GITHUB_ENV
@@ -65,7 +66,7 @@ jobs:
             fi
           else
             echo "Trigger: workflow_dispatch"
-            echo "PAIRS=${{ github.event.inputs.csv_file }}|${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+            echo "PAIRS=${{ github.event.inputs.csv_dir }}|${{ github.event.inputs.app }}" >> $GITHUB_ENV
             echo "SKIP=false" >> $GITHUB_ENV
           fi
 
@@ -75,14 +76,14 @@ jobs:
           while IFS= read -r PAIR; do
             [ -z "$PAIR" ] && continue
             CSV_DIR="${PAIR%%|*}"
-            ENV="${PAIR##*|}"
+            APP="${PAIR##*|}"
 
-            # Extract team: the leaf dir of the CSV directory
-            # (input/csv/<org>/<team> -> <team>).
-            TEAM=$(basename "$CSV_DIR")
+            # Extract env: the leaf dir of the CSV directory
+            # (input/csv/<client>/<env> -> <env>).
+            ENV=$(basename "$CSV_DIR")
 
-            # Branch/env consistency guard: on push, the file env must match the
-            # deploy branch so a wrong-env CSV cannot provision the wrong broker.
+            # Branch/env consistency guard: on push, the env directory must match
+            # the deploy branch so a wrong-env CSV cannot provision the wrong broker.
             if [ "${{ github.event_name }}" = "push" ] && [ "$ENV" != "${{ github.ref_name }}" ]; then
               echo "::warning::Skipping $CSV_DIR — env '$ENV' does not match branch '${{ github.ref_name }}'"
               continue
@@ -91,12 +92,12 @@ jobs:
             echo "========================================="
             echo "Processing dependency chain"
             echo "  Directory: $CSV_DIR"
-            echo "  Team: $TEAM"
+            echo "  App: $APP"
             echo "  Environment: $ENV"
             echo "========================================="
 
             # Step 1: ACL profiles (dependency)
-            ACL_FILE="${CSV_DIR}/acl-profiles-${ENV}.csv"
+            ACL_FILE="${CSV_DIR}/acl-profiles-${APP}.csv"
             if [ -f "$ACL_FILE" ]; then
               echo "Processing ACL profiles: $ACL_FILE"
               bash scripts/solace_self_service.sh --csv-file "$ACL_FILE" --env "$ENV" --verbose
@@ -105,7 +106,7 @@ jobs:
             fi
 
             # Step 2: Client profiles (dependency)
-            CP_FILE="${CSV_DIR}/client-profiles-${ENV}.csv"
+            CP_FILE="${CSV_DIR}/client-profiles-${APP}.csv"
             if [ -f "$CP_FILE" ]; then
               echo "Processing client profiles: $CP_FILE"
               bash scripts/solace_self_service.sh --csv-file "$CP_FILE" --env "$ENV" --verbose
@@ -114,7 +115,7 @@ jobs:
             fi
 
             # Step 3: Client usernames
-            CU_FILE="${CSV_DIR}/client-usernames-${ENV}.csv"
+            CU_FILE="${CSV_DIR}/client-usernames-${APP}.csv"
             if [ -f "$CU_FILE" ]; then
               echo "Processing client usernames: $CU_FILE"
               bash scripts/solace_self_service.sh --csv-file "$CU_FILE" --env "$ENV" --verbose
@@ -143,8 +144,8 @@ jobs:
           while IFS= read -r p; do
             [ -z "$p" ] && continue
             DIR="${p%%|*}"
-            ENV="${p##*|}"
-            echo "  - \`$DIR\` (env: \`$ENV\`)" >> $GITHUB_STEP_SUMMARY
+            APP="${p##*|}"
+            echo "  - \`$DIR\` (app: \`$APP\`)" >> $GITHUB_STEP_SUMMARY
           done <<< "$PAIRS"
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
