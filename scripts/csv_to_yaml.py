@@ -313,8 +313,8 @@ class CSVToYAMLConverter:
                 self.validate_csv_headers(reader.fieldnames, object_type)
             
             for row_num, row in enumerate(reader, start=2):  # Start at 2 since row 1 is headers
-                if self.verbose:
-                    self.log(f"Processing row {row_num}: {row}")
+                # if self.verbose:
+                #     self.log(f"Processing row {row_num}: {row}")
                 
                 # Parse each value in the row
                 parsed_row = {}
@@ -336,8 +336,8 @@ class CSVToYAMLConverter:
                 if parsed_row:  # Only add non-empty rows
                     objects.append(parsed_row)
                     
-                    if self.verbose:
-                        self.log(f"Processed row {row_num}: {parsed_row}")
+                    # if self.verbose:
+                    #     self.log(f"Processed row {row_num}: {parsed_row}")
         
         return objects
     
