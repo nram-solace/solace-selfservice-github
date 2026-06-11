@@ -8,13 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       csv_file:
-        description: 'Path to CSV file (e.g., input/csv/<org>/<team>/queues-dev.csv)'
+        description: 'Path to CSV file (e.g., input/csv/<client>/<env>/queues-<app>.csv)'
         required: true
-        default: 'input/csv/sample/team1/queues-dev.csv'
-      environment:
-        description: 'Target environment (e.g., dev, uat, prod)'
-        required: true
-        type: string
+        default: 'input/csv/sample/dev/queues-team1.csv'
 
 jobs:
   process_queues:
@@ -68,7 +64,6 @@ jobs:
           else
             echo "Trigger: workflow_dispatch"
             echo "FILES=${{ github.event.inputs.csv_file }}" >> $GITHUB_ENV
-            echo "DISPATCH_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
             echo "SKIP=false" >> $GITHUB_ENV
           fi
 
@@ -79,20 +74,13 @@ jobs:
           while IFS= read -r CSV_FILE; do
             [ -z "$CSV_FILE" ] && continue
 
-            # Extract team: the directory immediately above the CSV file
-            # (any depth under input/csv/, so input/csv/<org>/<team>/ resolves to <team>).
-            TEAM=$(basename "$(dirname "$CSV_FILE")")
+            # Path layout: input/csv/<client>/<env>/queues-<app>.csv
+            ENV=$(basename "$(dirname "$CSV_FILE")")
+            BASENAME=$(basename "$CSV_FILE" .csv)
+            APP="${BASENAME#queues-}"
 
-            # Extract environment from filename
-            if [ -n "$DISPATCH_ENV" ]; then
-              ENV="$DISPATCH_ENV"
-            else
-              BASENAME=$(basename "$CSV_FILE" .csv)
-              ENV="${BASENAME#queues-}"
-            fi
-
-            # Branch/env consistency guard: on push, the file env must match the
-            # deploy branch so a wrong-env CSV cannot provision the wrong broker.
+            # Branch/env consistency guard: on push, the env directory must match
+            # the deploy branch so a wrong-env CSV cannot provision the wrong broker.
             if [ "${{ github.event_name }}" = "push" ] && [ "$ENV" != "${{ github.ref_name }}" ]; then
               echo "::warning::Skipping $CSV_FILE — env '$ENV' does not match branch '${{ github.ref_name }}'"
               continue
@@ -100,7 +88,7 @@ jobs:
 
             echo "========================================="
             echo "Processing: $CSV_FILE"
-            echo "  Team: $TEAM"
+            echo "  App: $APP"
             echo "  Environment: $ENV"
             echo "========================================="
             bash scripts/solace_self_service.sh --csv-file "$CSV_FILE" --env "$ENV" --verbose

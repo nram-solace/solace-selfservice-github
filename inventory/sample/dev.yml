@@ -1,0 +1,31 @@
+# Solace router and access info for the sample client - dev environment
+# One inventory file per environment: inventory/<client>/<env>.yml
+# Each entry is keyed on "app" (application name). The env comes from the file name.
+#
+# Password options (in priority order):
+#   1. sempPasswordEnc: encrypted password in this file (requires 'cryptography' pip package)
+#   2. sempPassword: plaintext password in this file (for local dev only)
+#   3. SEMP_<ENV>_PASSWORD env var (e.g. SEMP_DEV_PASSWORD, for CI/CD)
+#   4. SEMP_PASSWORD env var (for CI/CD)
+#   5. If none set, script exits with error
+#
+# To generate an encrypted password:
+#   pip install cryptography
+#   python3 scripts/crypto_utils.py --encrypt-string "your-password"
+#
+# To use a custom encryption key (must be set at runtime too):
+#   export PASSWORD_ENC_KEY="your-secret-key"
+#   python3 scripts/crypto_utils.py --encrypt-string "your-password"
+
+---
+inventory:
+    hosts:
+    # app matches the <app> suffix of the CSV file name (e.g. queues-team1.csv)
+
+    # Example with plaintext password (for local dev only)
+    - app: "team1"
+      host: "localhost"
+      sempUrl: "http://localhost:8080"
+      sempUser: "admin"
+      sempPassword: "admin"
+      vpn: "default"
