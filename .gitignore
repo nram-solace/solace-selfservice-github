@@ -20,3 +20,6 @@ logs/**
 */__pycache__/**
 .DS_Store
 _github
+input/csv/NT/
+input/yaml/NT/
+inventory/NT/
