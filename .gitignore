@@ -5,7 +5,7 @@ input/nram/**
 logs/**
 env.sh
 input/default.yaml
-.claude/settings.local.json
+.claude/**
 .gitignore
 input/yaml/**/*.yaml
 !input/sample/

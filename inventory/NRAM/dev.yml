@@ -1,0 +1,15 @@
+# Solace router and access info for NRAM - dev environment
+# One inventory file per environment: inventory/<client>/<env>.yml
+# Each entry is keyed on "app" (application name). The env comes from the file name.
+#
+# Password: SEMP_DEV_PASSWORD or SEMP_PASSWORD env var at runtime (CI/CD),
+# or add sempPassword/sempPasswordEnc per entry.
+
+---
+inventory:
+    hosts:
+    - app: "nram-cloud"
+      host: "nramtest.messaging.solace.cloud"
+      sempUrl: "https://nramtest.messaging.solace.cloud:943"
+      sempUser: "nram-dt-test-admin"
+      vpn: "nram-dt-test"

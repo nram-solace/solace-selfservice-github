@@ -1,33 +1,33 @@
 # Inventory Setup
 
-Each team has a single inventory file at `inventory/<team>.yaml` containing broker connection details for all environments.
+Each client has one inventory file **per environment** at `inventory/<client>/<env>.yml`, with one entry per application (app). The environment comes from the file name; entries are keyed on `app`.
 
 ## File Format
 
 ```yaml
-# inventory/team1.yaml
+# inventory/NRAM/dev.yml
 inventory:
     hosts:
-    - environment: "dev"                 # matched by --env CLI parameter
+    - app: "xyz"                          # matched by the <app> suffix of the CSV filename
       host: "dev-broker.example.com"
       sempUrl: "https://dev-broker.example.com:8080"
       sempUser: "admin"
       sempPasswordEnc: "Z0FBQUFBQm95..."  # encrypted password (optional)
-      vpn: "Team1-DEV-VPN"
+      vpn: "XYZ-DEV-VPN"
 
-    - environment: "uat"
-      host: "uat-broker.example.com"
-      sempUrl: "https://uat-broker.example.com:8080"
+    - app: "abc"
+      host: "dev-broker.example.com"
+      sempUrl: "https://dev-broker.example.com:8080"
       sempUser: "admin"
-      sempPassword: "admin"              # plaintext password (optional)
-      vpn: "Team1-UAT-VPN"
+      sempPassword: "admin"               # plaintext password (optional)
+      vpn: "ABC-DEV-VPN"
 ```
 
 ## Required Fields
 
 | Field | Description |
 | ----- | ----------- |
-| `environment` | Environment key matched by the `--env` CLI parameter (e.g., `dev`, `uat`, `prod`) |
+| `app` | Application name, matched by the `<app>` suffix of the CSV filename (e.g., `queues-xyz.csv` → `xyz`) |
 | `host` | Broker hostname |
 | `sempUrl` | Full SEMP management URL including port |
 | `sempUser` | SEMP admin username |
@@ -39,33 +39,46 @@ inventory:
 | ----- | ----------- |
 | `sempPasswordEnc` | Fernet-encrypted password, decrypted at runtime via `PASSWORD_ENC_KEY` env var |
 | `sempPassword` | Plaintext password (local dev only) |
-| _(neither)_ | Falls back to `SEMP_PASSWORD` env var |
+| _(neither)_ | Falls back to `SEMP_<ENV>_PASSWORD` then `SEMP_PASSWORD` env vars |
 
 See [Password Management](password-management.md) for encryption details and priority order.
 
 ## Inventory Resolution
 
-The tool resolves the broker connection in two steps:
+The tool resolves the broker connection from the CSV path alone:
 
-1. **Team** is extracted from the CSV directory path: `input/csv/<team>/queues-dev.csv` → `team1`
-2. **Environment** is matched from the `--env` CLI arg against `hosts[].environment`
+1. **Client** and **environment** come from the CSV directory path: `input/csv/<client>/<env>/...`
+2. **App** comes from the CSV filename suffix: `<object>-<app>.csv`
+3. The entry matching `app` in `inventory/<client>/<env>.yml` is used
 
 ```text
-  CSV path:  input/csv/team1/queues-dev.csv  → team = "team1"
-  CLI arg:   --env dev
-  Lookup:    inventory/team1.yaml → hosts[environment="dev"] → vpn="Team1-DEV-VPN"
+  CSV path:  input/csv/NRAM/dev/queues-xyz.csv
+             → client = "NRAM", env = "dev", app = "xyz"
+  Lookup:    inventory/NRAM/dev.yml → hosts[app="xyz"] → vpn="XYZ-DEV-VPN"
 ```
+
+If the inventory file or the app entry is missing, the run fails immediately — there is no fallback scan of other inventory files.
 
 ## Directory Layout
 
 ```text
 inventory/
-├── team1.yaml          ← All environments for team1
-├── team2.yaml
-├── team3.yaml
-└── sample.yml          ← Sample inventory with password examples
+├── NRAM/
+│   ├── dev.yml          ← All NRAM apps in dev
+│   ├── int.yml
+│   ├── sys.yml
+│   ├── uat.yml
+│   └── prod.yml
+├── NT/
+│   ├── dev.yml
+│   ├── uat.yml
+│   └── prod.yml
+└── sample/
+    ├── dev.yml          ← Sample inventory with password examples
+    ├── uat.yml
+    └── prod.yml
 ```
 
 ## Sample Inventory
 
-See `inventory/sample.yml` for a working example with all three password modes (encrypted, plaintext, env var fallback).
+See `inventory/sample/` for working examples covering all three password modes (plaintext in `dev.yml`, encrypted in `uat.yml`, env var fallback in `prod.yml`).
